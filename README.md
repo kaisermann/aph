@@ -68,8 +68,6 @@ aph(...).filter(function(item) { ... })
 aph(...).get([index])
 ```
 
-### Looping elements
-
 ### Manipulating the element
 
 #### Data and properties
