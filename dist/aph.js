@@ -49,14 +49,10 @@ Apheleia.prototype.get = function get (index) {
 
 // Iterates through the elements with a 'callback(element, index)''
 // The this is attached to the element itself
-Apheleia.prototype.each = function each (cb) {
-  return this.elements.forEach(function (elem, index) { return cb.call(elem, elem, index); })
-};
+Apheleia.prototype.each = function each (cb) { return this.elements.forEach(cb) };
 
 // Node Data manipulation Methods
 Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
-    var this$1 = this;
-
   // If prepend is falsy, it would be an empty string anyway
   prepend = prepend || '';
 
@@ -73,13 +69,13 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
   }
 
   // Finally, let's set the attributes
-  Object.keys(tmpObj).forEach(function (key) { return this$1.each(function (elem) { return elem.setAttribute(prepend + key, tmpObj[key]); }); });
+  this.each(function (elem) { return Object.keys(tmpObj).forEach(function (key) { return elem.setAttribute(prepend + key, tmpObj[key]); }
+    ); }
+  );
   return this
 };
 
 Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
-    var this$1 = this;
-
   var tmpObj = objOrKey;
   // Is the first parameter a key string?
   if ('' + objOrKey === objOrKey) {
@@ -93,7 +89,10 @@ Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
   }
 
   // Finally, let's set the properties
-  Object.keys(tmpObj).forEach(function (key) { return this$1.each(function (elem) { return (elem[key] = tmpObj[key]); }); });
+  this.each(function (elem) { return Object.keys(tmpObj).forEach(function (key) {
+      elem[key] = tmpObj[key];
+    }); }
+  );
   return this
 };
 
@@ -164,7 +163,6 @@ Object.keys(collectionChain).forEach(function (key) {
   };
 });
 
-// Apheleia wrapper
 function aph (elems, contextOrAttrKey, nothingOrAttrVal) {
   return new Apheleia(elems, contextOrAttrKey, nothingOrAttrVal)
 }

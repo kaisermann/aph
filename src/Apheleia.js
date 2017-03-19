@@ -44,9 +44,7 @@ class Apheleia {
 
   // Iterates through the elements with a 'callback(element, index)''
   // The this is attached to the element itself
-  each (cb) {
-    return this.elements.forEach((elem, index) => cb.call(elem, elem, index))
-  }
+  each (cb) { return this.elements.forEach(cb) }
 
   // Node Data manipulation Methods
   attr (objOrKey, nothingOrValue, prepend) {
@@ -65,7 +63,11 @@ class Apheleia {
     }
 
     // Finally, let's set the attributes
-    Object.keys(tmpObj).forEach(key => this.each(elem => elem.setAttribute(prepend + key, tmpObj[key])))
+    this.each(elem =>
+      Object.keys(tmpObj).forEach(key =>
+        elem.setAttribute(prepend + key, tmpObj[key])
+      )
+    )
     return this
   }
 
@@ -82,7 +84,11 @@ class Apheleia {
     }
 
     // Finally, let's set the properties
-    Object.keys(tmpObj).forEach(key => this.each(elem => (elem[key] = tmpObj[key])))
+    this.each(elem =>
+      Object.keys(tmpObj).forEach(key => {
+        elem[key] = tmpObj[key]
+      })
+    )
     return this
   }
 
