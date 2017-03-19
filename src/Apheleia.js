@@ -1,11 +1,9 @@
-const slice = Array.prototype.slice
-
 class Apheleia {
   constructor (elems, contextOrAttr, nothingOrAttrVal) {
     // Second parameter is used as context when a HTML Element is passed
-    // Second/Third parameter are used as attribute object/list/pair when creating nodes
+    // Second/Third parameter are used as attribute object/list/pair when creating elements
     this.context = contextOrAttr instanceof Element ? contextOrAttr : document
-    this.elements = this.parseArgs(elems)
+    this.elements = this.parseElems(elems)
     this.length = this.elements.length
 
     // If second parameter is not an html element and not undefined, we assume it's an attribute obj
@@ -13,14 +11,17 @@ class Apheleia {
       this.attr(contextOrAttr, nothingOrAttrVal)
     }
   }
-  parseArgs (stringOrListOrNode) {
+
+  parseElems (stringOrListOrNode) {
     // If single string
-    if (typeof stringOrListOrNode === 'string') {
+    if ('' + stringOrListOrNode === stringOrListOrNode) {
       const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
       // If creation string
-      if (isCreationStr) return [document.createElement(isCreationStr[1])]
+      if (isCreationStr) {
+        return [document.createElement(isCreationStr[1])]
+      }
       // If not a creation string, let's search for the elements
-      return slice.call(this.context.querySelectorAll(stringOrListOrNode))
+      return Array.prototype.slice.call(this.context.querySelectorAll(stringOrListOrNode))
     }
     // If single node
     if (stringOrListOrNode instanceof Element) {
@@ -28,7 +29,7 @@ class Apheleia {
     }
     // If node list
     if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
-      return slice.call(stringOrListOrNode)
+      return Array.prototype.slice.call(stringOrListOrNode)
     }
     // If array, we're done
     if (Array.isArray(stringOrListOrNode)) {
@@ -36,50 +37,59 @@ class Apheleia {
     }
     return []
   }
+
   get (index) {
     return index !== undefined ? this.elements[index] : this.elements
   }
+
   // Iterates through the elements with a 'callback(element, index)''
   // The this is attached to the element itself
   each (cb) {
     return this.elements.forEach((elem, index) => cb.call(elem, elem, index))
   }
+
   // Node Data manipulation Methods
   attr (objOrKey, nothingOrValue, prepend) {
+    // If prepend is falsy, it would be an empty string anyway
     prepend = prepend || ''
-    // If passed only a key, let's return the attribute
-    if (typeof objOrKey === 'string' && nothingOrValue === undefined) {
-      return this.elements[0].getAttribute(prepend + objOrKey)
+
+    let tmpObj = objOrKey
+    // Is the first parameter a key string?
+    if ('' + objOrKey === objOrKey) {
+      // If passed only a key, let's return the attribute
+      if (nothingOrValue === undefined) {
+        return this.elements[0].getAttribute(prepend + objOrKey)
+      }
+      // If not, let's objectify the key/value pair
+      tmpObj = { [objOrKey]: nothingOrValue }
     }
-    // If not, let's see what was passed
-    objOrKey = objectifyTuple(objOrKey, nothingOrValue)
 
     // Finally, let's set the attributes
-    Object.keys(objOrKey).forEach(key =>
-      this.elements.forEach(elem =>
-        elem.setAttribute(prepend + key, objOrKey[key])
-      )
-    )
+    Object.keys(tmpObj).forEach(key => this.each(elem => elem.setAttribute(prepend + key, tmpObj[key])))
     return this
   }
+
+  prop (objOrKey, nothingOrValue) {
+    let tmpObj = objOrKey
+    // Is the first parameter a key string?
+    if ('' + objOrKey === objOrKey) {
+      // If passed only a key, let's return the property
+      if (nothingOrValue === undefined) {
+        return this.elements[0][objOrKey]
+      }
+      // If not, let's objectify the key/value pair
+      tmpObj = { [objOrKey]: nothingOrValue }
+    }
+
+    // Finally, let's set the properties
+    Object.keys(tmpObj).forEach(key => this.each(elem => (elem[key] = tmpObj[key])))
+    return this
+  }
+
   data (objOrKey, nothingOrValue) {
     return this.attr(objOrKey, nothingOrValue, 'data-')
   }
-  prop (objOrKey, nothingOrValue) {
-    // If passed only a key, let's return the property
-    if (typeof objOrKey === 'string' && nothingOrValue === undefined) {
-      return this.elements[0][objOrKey]
-    }
 
-    objOrKey = objectifyTuple(objOrKey, nothingOrValue)
-
-    Object.keys(objOrKey).forEach(key =>
-      this.elements.forEach(elem =>
-        (elem[key] = objOrKey[key])
-      )
-    )
-    return this
-  }
   filter (cb) {
     return new Apheleia(this.elements.filter(elem => cb(elem)))
   }
@@ -92,36 +102,36 @@ class Apheleia {
 // Wrapper for main chainable methods.
 const collectionChain = {
   // DOM Manipulation Methods
-  appendTo (node, newParent) {
-    newParent.appendChild(node)
+  appendTo (element, newParent) {
+    newParent.appendChild(element)
   },
-  prependTo (node, newParent) {
-    newParent.insertBefore(node, newParent.firstChild)
+  prependTo (element, newParent) {
+    newParent.insertBefore(element, newParent.firstChild)
   },
-  delete (node) {
-    node.parentNode.removeChild(node)
+  delete (element) {
+    element.parentNode.removeChild(element)
   },
   // Class methods
-  toggleClass (node, className) {
-    node.classList.toggle(className)
+  toggleClass (element, className) {
+    element.classList.toggle(className)
   },
-  addClass (node) {
-    node.classList.add(slice.call(arguments, 1))
+  addClass (element) {
+    element.classList.add(Array.prototype.slice.call(arguments, 1))
   },
-  removeClass (node) {
-    node.classList.remove(slice.call(arguments, 1))
+  removeClass (element) {
+    element.classList.remove(Array.prototype.slice.call(arguments, 1))
   },
   // Wrapper for Node methods
-  exec (node, fnName) {
-    node[fnName].apply(node, slice.call(arguments, 2))
+  exec (element, fnName) {
+    element[fnName].apply(element, Array.prototype.slice.call(arguments, 2))
   },
-  on (node, events, cb) {
-    events.split(' ').forEach(eventName => node.addEventListener(eventName, cb))
+  on (element, events, cb) {
+    events.split(' ').forEach(eventName => element.addEventListener(eventName, cb))
   },
-  off (node, events, cb) {
-    events.split(' ').forEach(eventName => node.removeEventListener(eventName, cb))
+  off (element, events, cb) {
+    events.split(' ').forEach(eventName => element.removeEventListener(eventName, cb))
   },
-  once (node, events, cb) {
+  once (element, events, cb) {
     const onceFn = e => (cb(e) || this.off(e.type, onceFn))
     this.on(events, onceFn)
   },
@@ -130,19 +140,14 @@ const collectionChain = {
 // Wraps the default chainable methods with the elements loop and 'return this'
 Object.keys(collectionChain).forEach(key => {
   Apheleia.prototype[key] = function () {
-    this.elements.forEach(elem =>
-      collectionChain[key].apply(this, [elem].concat(slice.call(arguments)))
+    this.each(elem =>
+      collectionChain[key].apply(
+        this,
+        [elem].concat(Array.prototype.slice.call(arguments))
+      )
     )
     return this
   }
 })
-
-// Helpers
-const objectifyTuple = (objOrKey, nothingOrValue) =>
-  typeof objOrKey === 'string'
-  ? {
-    [objOrKey]: nothingOrValue,
-  }
-  : (objOrKey || {})
 
 export default Apheleia

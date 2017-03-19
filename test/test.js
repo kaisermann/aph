@@ -3,8 +3,8 @@ require('jsdom-global')()
 const assert = require('chai').assert
 const aph = require('../dist/aph')
 
-let element
-let element2
+let element  // eslint-disable-line
+let element2 // eslint-disable-line
 
 describe('Apheleia plugins', function () {
   it('should expose aph.fn', function () {
@@ -15,7 +15,7 @@ describe('Apheleia plugins', function () {
     aph.plug('log', function () {
       this.each(item => console.log(item))
     })
-    assert.isFunction(aph.fn.log)
+    assert.isFunction(aph().log)
   })
 })
 
