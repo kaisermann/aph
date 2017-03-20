@@ -15,7 +15,8 @@ class Apheleia {
     // If single = true, a 'querySelector' is executed
     // If single is falsy, 'querySelectorAll' is executed
     return new Apheleia(
-      this.get(0)['querySelector' + (single ? '' : 'All')](selector), this.get(0)
+      this.elements[0]['querySelector' + (single ? '' : 'All')](selector),
+      this.elements[0] // Context will be the used element for querying
     )
   }
 
@@ -87,37 +88,45 @@ class Apheleia {
   appendTo (newParent) {
     return this.each(elem => newParent.appendChild(elem))
   }
+
   prependTo (newParent) {
     return this.each(elem => newParent.insertBefore(elem, newParent.firstChild))
   }
+
   delete () {
     return this.each(elem => elem.parentNode.removeChild(elem))
   }
+
   // Class methods
   toggleClass (className) {
     return this.each(elem => elem.classList.toggle(className))
   }
+
   addClass (/* any number of arguments */) {
     return this.each(elem =>
       elem.classList.add(Array.prototype.slice.call(arguments))
     )
   }
+
   removeClass (/* any number of arguments */) {
     return this.each(elem =>
       elem.classList.remove(Array.prototype.slice.call(arguments))
     )
   }
+
   hasClass (className, every) {
     return this.elements[every ? 'every' : 'some'](elem => {
       return elem.classList.contains(className)
     })
   }
+
   // Wrapper for Node methods
   exec (fnName/*, any number of arguments */) {
     return this.each(elem =>
       elem[fnName].apply(elem, Array.prototype.slice.call(arguments, 1))
     )
   }
+
   on (events, cb) {
     return this.each(elem =>
       events.split(' ').forEach(eventName =>
@@ -125,6 +134,7 @@ class Apheleia {
       )
     )
   }
+
   off (events, cb) {
     return this.each(elem =>
       events.split(' ').forEach(eventName =>
@@ -132,6 +142,7 @@ class Apheleia {
       )
     )
   }
+
   once (events, cb) {
     const onceFn = e => (cb(e) || this.off(e.type, onceFn))
     return this.on(events, onceFn)
@@ -143,7 +154,7 @@ const aphParseContext = (contextOrAttr) => {
   return contextOrAttr instanceof Element
     ? contextOrAttr // If already a html element
     : Apheleia.prototype.isPrototypeOf(contextOrAttr)
-      ? contextOrAttr.get(0) // If already apheleia object
+      ? contextOrAttr.elements[0] // If already apheleia object
       : document // Probably an attribute was passed. Return the document.
 }
 
@@ -173,7 +184,7 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
   }
   // If another apheleia object is passed, get all elements from it
   if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
-    return stringOrListOrNode.get()
+    return stringOrListOrNode.elements
   }
   return []
 }

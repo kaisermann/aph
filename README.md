@@ -1,6 +1,6 @@
 # Aph
 
-A very lightweight (**842 bytes** minified and gzipped), easy and simple DOM manipulation library.
+A very lightweight (**837 bytes** minified and gzipped), easy and simple DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -68,7 +68,7 @@ aph(...).each(function(element, index) { ... })
 aph(...).filter(function(item) { ... })
 
 // Returns a new Apheleia instance with the discovered elements
-// If single = true, returns only one element.
+// If single = true, returns only the first element.
 // Otherwise, it returns all found elements.
 aph(...).find(selector, single = false)
 

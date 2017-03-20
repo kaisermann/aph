@@ -20,7 +20,8 @@ Apheleia.prototype.find = function find (selector, single) {
   // If single = true, a 'querySelector' is executed
   // If single is falsy, 'querySelectorAll' is executed
   return new Apheleia(
-    this.get(0)['querySelector' + (single ? '' : 'All')](selector), this.get(0)
+    this.elements[0]['querySelector' + (single ? '' : 'All')](selector),
+    this.elements[0] // Context will be the used element for querying
   )
 };
 
@@ -87,33 +88,40 @@ Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
 Apheleia.prototype.appendTo = function appendTo (newParent) {
   return this.each(function (elem) { return newParent.appendChild(elem); })
 };
+
 Apheleia.prototype.prependTo = function prependTo (newParent) {
   return this.each(function (elem) { return newParent.insertBefore(elem, newParent.firstChild); })
 };
+
 Apheleia.prototype.delete = function delete$1 () {
   return this.each(function (elem) { return elem.parentNode.removeChild(elem); })
 };
+
 // Class methods
 Apheleia.prototype.toggleClass = function toggleClass (className) {
   return this.each(function (elem) { return elem.classList.toggle(className); })
 };
+
 Apheleia.prototype.addClass = function addClass (/* any number of arguments */) {
     var arguments$1 = arguments;
 
   return this.each(function (elem) { return elem.classList.add(Array.prototype.slice.call(arguments$1)); }
   )
 };
+
 Apheleia.prototype.removeClass = function removeClass (/* any number of arguments */) {
     var arguments$1 = arguments;
 
   return this.each(function (elem) { return elem.classList.remove(Array.prototype.slice.call(arguments$1)); }
   )
 };
+
 Apheleia.prototype.hasClass = function hasClass (className, every) {
   return this.elements[every ? 'every' : 'some'](function (elem) {
     return elem.classList.contains(className)
   })
 };
+
 // Wrapper for Node methods
 Apheleia.prototype.exec = function exec (fnName/*, any number of arguments */) {
     var arguments$1 = arguments;
@@ -121,16 +129,19 @@ Apheleia.prototype.exec = function exec (fnName/*, any number of arguments */) {
   return this.each(function (elem) { return elem[fnName].apply(elem, Array.prototype.slice.call(arguments$1, 1)); }
   )
 };
+
 Apheleia.prototype.on = function on (events, cb) {
   return this.each(function (elem) { return events.split(' ').forEach(function (eventName) { return elem.addEventListener(eventName, cb); }
     ); }
   )
 };
+
 Apheleia.prototype.off = function off (events, cb) {
   return this.each(function (elem) { return events.split(' ').forEach(function (eventName) { return elem.removeEventListener(eventName, cb); }
     ); }
   )
 };
+
 Apheleia.prototype.once = function once (events, cb) {
     var this$1 = this;
 
@@ -143,7 +154,7 @@ var aphParseContext = function (contextOrAttr) {
   return contextOrAttr instanceof Element
     ? contextOrAttr // If already a html element
     : Apheleia.prototype.isPrototypeOf(contextOrAttr)
-      ? contextOrAttr.get(0) // If already apheleia object
+      ? contextOrAttr.elements[0] // If already apheleia object
       : document // Probably an attribute was passed. Return the document.
 };
 
@@ -173,7 +184,7 @@ var aphParseElements = function (stringOrListOrNode, ctx) {
   }
   // If another apheleia object is passed, get all elements from it
   if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
-    return stringOrListOrNode.get()
+    return stringOrListOrNode.elements
   }
   return []
 };
