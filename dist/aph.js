@@ -49,7 +49,10 @@ Apheleia.prototype.get = function get (index) {
 
 // Iterates through the elements with a 'callback(element, index)''
 // The this is attached to the element itself
-Apheleia.prototype.each = function each (cb) { return this.elements.forEach(cb) };
+Apheleia.prototype.each = function each (cb) {
+  this.elements.forEach(cb);
+  return this
+};
 
 // Node Data manipulation Methods
 Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
@@ -101,67 +104,62 @@ Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
 };
 
 Apheleia.prototype.filter = function filter (cb) {
-  return new Apheleia(this.elements.filter(function (elem) { return cb(elem); }))
+  return new Apheleia(this.elements.filter(function (elem) { return cb(elem); }
+  ))
 };
 
-Apheleia.prototype.hasClass = function hasClass (className, every) {
-  return this.elements[every ? 'every' : 'some'](function (elem) { return elem.classList.contains(className); })
+Apheleia.prototype.appendTo = function appendTo (newParent) {
+  return this.each(function (elem) { return newParent.appendChild(elem); })
 };
-
-// Wrapper for main chainable methods.
-var collectionChain = {
-  // DOM Manipulation Methods
-  appendTo: function appendTo (element, newParent) {
-    newParent.appendChild(element);
-  },
-  prependTo: function prependTo (element, newParent) {
-    newParent.insertBefore(element, newParent.firstChild);
-  },
-  delete: function delete$1 (element) {
-    element.parentNode.removeChild(element);
-  },
-  // Class methods
-  toggleClass: function toggleClass (element, className) {
-    element.classList.toggle(className);
-  },
-  addClass: function addClass (element) {
-    element.classList.add(Array.prototype.slice.call(arguments, 1));
-  },
-  removeClass: function removeClass (element) {
-    element.classList.remove(Array.prototype.slice.call(arguments, 1));
-  },
-  // Wrapper for Node methods
-  exec: function exec (element, fnName) {
-    element[fnName].apply(element, Array.prototype.slice.call(arguments, 2));
-  },
-  on: function on (element, events, cb) {
-    events.split(' ').forEach(function (eventName) { return element.addEventListener(eventName, cb); });
-  },
-  off: function off (element, events, cb) {
-    events.split(' ').forEach(function (eventName) { return element.removeEventListener(eventName, cb); });
-  },
-  once: function once (element, events, cb) {
-    var this$1 = this;
-
-    var onceFn = function (e) { return (cb(e) || this$1.off(e.type, onceFn)); };
-    this.on(events, onceFn);
-  },
+Apheleia.prototype.prependTo = function prependTo (newParent) {
+  return this.each(function (elem) { return newParent.insertBefore(elem, newParent.firstChild); })
 };
-
-// Wraps the default chainable methods with the elements loop and 'return this'
-Object.keys(collectionChain).forEach(function (key) {
-  Apheleia.prototype[key] = function () {
+Apheleia.prototype.delete = function delete$1 () {
+  return this.each(function (elem) { return elem.parentNode.removeChild(elem); })
+};
+// Class methods
+Apheleia.prototype.toggleClass = function toggleClass (className) {
+  return this.each(function (elem) { return elem.classList.toggle(className); })
+};
+Apheleia.prototype.addClass = function addClass (/* any number of arguments */) {
     var arguments$1 = arguments;
+
+  return this.each(function (elem) { return elem.classList.add(Array.prototype.slice.call(arguments$1)); }
+  )
+};
+Apheleia.prototype.removeClass = function removeClass (/* any number of arguments */) {
+    var arguments$1 = arguments;
+
+  return this.each(function (elem) { return elem.classList.remove(Array.prototype.slice.call(arguments$1)); }
+  )
+};
+Apheleia.prototype.hasClass = function hasClass (className, every) {
+  return this.elements[every ? 'every' : 'some'](function (elem) { return elem.classList.contains(className); }
+  )
+};
+// Wrapper for Node methods
+Apheleia.prototype.exec = function exec (fnName/*, any number of arguments */) {
+    var arguments$1 = arguments;
+
+  return this.each(function (elem) { return elem[fnName].apply(elem, Array.prototype.slice.call(arguments$1, 1)); }
+  )
+};
+Apheleia.prototype.on = function on (events, cb) {
+  return this.each(function (elem) { return events.split(' ').forEach(function (eventName) { return elem.addEventListener(eventName, cb); }
+    ); }
+  )
+};
+Apheleia.prototype.off = function off (events, cb) {
+  return this.each(function (elem) { return events.split(' ').forEach(function (eventName) { return elem.removeEventListener(eventName, cb); }
+    ); }
+  )
+};
+Apheleia.prototype.once = function once (events, cb) {
     var this$1 = this;
 
-    this.each(function (elem) { return collectionChain[key].apply(
-        this$1,
-        [elem].concat(Array.prototype.slice.call(arguments$1))
-      ); }
-    );
-    return this
-  };
-});
+  var onceFn = function (e) { return (cb(e) || this$1.off(e.type, onceFn)); };
+  this.on(events, onceFn);
+};
 
 function aph (elems, contextOrAttrKey, nothingOrAttrVal) {
   return new Apheleia(elems, contextOrAttrKey, nothingOrAttrVal)

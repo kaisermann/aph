@@ -44,7 +44,10 @@ class Apheleia {
 
   // Iterates through the elements with a 'callback(element, index)''
   // The this is attached to the element itself
-  each (cb) { return this.elements.forEach(cb) }
+  each (cb) {
+    this.elements.forEach(cb)
+    return this
+  }
 
   // Node Data manipulation Methods
   attr (objOrKey, nothingOrValue, prepend) {
@@ -59,7 +62,9 @@ class Apheleia {
         return this.elements[0].getAttribute(prepend + objOrKey)
       }
       // If not, let's objectify the key/value pair
-      tmpObj = { [objOrKey]: nothingOrValue }
+      tmpObj = {
+        [objOrKey]: nothingOrValue,
+      }
     }
 
     // Finally, let's set the attributes
@@ -80,7 +85,9 @@ class Apheleia {
         return this.elements[0][objOrKey]
       }
       // If not, let's objectify the key/value pair
-      tmpObj = { [objOrKey]: nothingOrValue }
+      tmpObj = {
+        [objOrKey]: nothingOrValue,
+      }
     }
 
     // Finally, let's set the properties
@@ -97,63 +104,63 @@ class Apheleia {
   }
 
   filter (cb) {
-    return new Apheleia(this.elements.filter(elem => cb(elem)))
+    return new Apheleia(this.elements.filter(elem =>
+      cb(elem)
+    ))
   }
 
-  hasClass (className, every) {
-    return this.elements[every ? 'every' : 'some'](elem => elem.classList.contains(className))
+  appendTo (newParent) {
+    return this.each(elem => newParent.appendChild(elem))
   }
-}
-
-// Wrapper for main chainable methods.
-const collectionChain = {
-  // DOM Manipulation Methods
-  appendTo (element, newParent) {
-    newParent.appendChild(element)
-  },
-  prependTo (element, newParent) {
-    newParent.insertBefore(element, newParent.firstChild)
-  },
-  delete (element) {
-    element.parentNode.removeChild(element)
-  },
+  prependTo (newParent) {
+    return this.each(elem => newParent.insertBefore(elem, newParent.firstChild))
+  }
+  delete () {
+    return this.each(elem => elem.parentNode.removeChild(elem))
+  }
   // Class methods
-  toggleClass (element, className) {
-    element.classList.toggle(className)
-  },
-  addClass (element) {
-    element.classList.add(Array.prototype.slice.call(arguments, 1))
-  },
-  removeClass (element) {
-    element.classList.remove(Array.prototype.slice.call(arguments, 1))
-  },
+  toggleClass (className) {
+    return this.each(elem => elem.classList.toggle(className))
+  }
+  addClass (/* any number of arguments */) {
+    return this.each(elem =>
+      elem.classList.add(Array.prototype.slice.call(arguments))
+    )
+  }
+  removeClass (/* any number of arguments */) {
+    return this.each(elem =>
+      elem.classList.remove(Array.prototype.slice.call(arguments))
+    )
+  }
+  hasClass (className, every) {
+    return this.elements[every ? 'every' : 'some'](elem =>
+      elem.classList.contains(className)
+    )
+  }
   // Wrapper for Node methods
-  exec (element, fnName) {
-    element[fnName].apply(element, Array.prototype.slice.call(arguments, 2))
-  },
-  on (element, events, cb) {
-    events.split(' ').forEach(eventName => element.addEventListener(eventName, cb))
-  },
-  off (element, events, cb) {
-    events.split(' ').forEach(eventName => element.removeEventListener(eventName, cb))
-  },
-  once (element, events, cb) {
-    const onceFn = e => (cb(e) || this.off(e.type, onceFn))
-    this.on(events, onceFn)
-  },
-}
-
-// Wraps the default chainable methods with the elements loop and 'return this'
-Object.keys(collectionChain).forEach(key => {
-  Apheleia.prototype[key] = function () {
-    this.each(elem =>
-      collectionChain[key].apply(
-        this,
-        [elem].concat(Array.prototype.slice.call(arguments))
+  exec (fnName/*, any number of arguments */) {
+    return this.each(elem =>
+      elem[fnName].apply(elem, Array.prototype.slice.call(arguments, 1))
+    )
+  }
+  on (events, cb) {
+    return this.each(elem =>
+      events.split(' ').forEach(eventName =>
+        elem.addEventListener(eventName, cb)
       )
     )
-    return this
   }
-})
+  off (events, cb) {
+    return this.each(elem =>
+      events.split(' ').forEach(eventName =>
+        elem.removeEventListener(eventName, cb)
+      )
+    )
+  }
+  once (events, cb) {
+    const onceFn = e => (cb(e) || this.off(e.type, onceFn))
+    this.on(events, onceFn)
+  }
+}
 
 export default Apheleia
