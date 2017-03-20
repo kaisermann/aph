@@ -6,7 +6,17 @@ class Apheleia {
   }
 
   filter (cb) {
+    // Returns a new Apheleia instance with the filtered elements
     return new Apheleia(this.elements.filter(cb))
+  }
+
+  find (selector, single) {
+    // Creates a new Apheleia instance with the elements found.
+    // If single = true, a 'querySelector' is executed
+    // If single is falsy, 'querySelectorAll' is executed
+    return new Apheleia(
+      this.get(0)['querySelector' + (single ? '' : 'All')](selector), this.get(0)
+    )
   }
 
   get (index) {
@@ -15,7 +25,6 @@ class Apheleia {
   }
 
   // Iterates through the elements with a 'callback(element, index)''
-  // The this is attached to the element itself
   each (cb) {
     this.elements.forEach(cb)
     return this
@@ -99,9 +108,9 @@ class Apheleia {
     )
   }
   hasClass (className, every) {
-    return this.elements[every ? 'every' : 'some'](elem =>
-      elem.classList.contains(className)
-    )
+    return this.elements[every ? 'every' : 'some'](elem => {
+      return elem.classList.contains(className)
+    })
   }
   // Wrapper for Node methods
   exec (fnName/*, any number of arguments */) {

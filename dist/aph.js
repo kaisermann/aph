@@ -11,7 +11,17 @@ var Apheleia = function Apheleia (elems, context) {
 };
 
 Apheleia.prototype.filter = function filter (cb) {
+  // Returns a new Apheleia instance with the filtered elements
   return new Apheleia(this.elements.filter(cb))
+};
+
+Apheleia.prototype.find = function find (selector, single) {
+  // Creates a new Apheleia instance with the elements found.
+  // If single = true, a 'querySelector' is executed
+  // If single is falsy, 'querySelectorAll' is executed
+  return new Apheleia(
+    this.get(0)['querySelector' + (single ? '' : 'All')](selector), this.get(0)
+  )
 };
 
 Apheleia.prototype.get = function get (index) {
@@ -20,7 +30,6 @@ Apheleia.prototype.get = function get (index) {
 };
 
 // Iterates through the elements with a 'callback(element, index)''
-// The this is attached to the element itself
 Apheleia.prototype.each = function each (cb) {
   this.elements.forEach(cb);
   return this
@@ -101,8 +110,9 @@ Apheleia.prototype.removeClass = function removeClass (/* any number of argument
   )
 };
 Apheleia.prototype.hasClass = function hasClass (className, every) {
-  return this.elements[every ? 'every' : 'some'](function (elem) { return elem.classList.contains(className); }
-  )
+  return this.elements[every ? 'every' : 'some'](function (elem) {
+    return elem.classList.contains(className)
+  })
 };
 // Wrapper for Node methods
 Apheleia.prototype.exec = function exec (fnName/*, any number of arguments */) {
@@ -168,18 +178,12 @@ var aphParseElements = function (stringOrListOrNode, ctx) {
   return []
 };
 
-function aph (elems, contextOrAttrKey, nothingOrAttrVal) {
-  return new Apheleia(elems, contextOrAttrKey, nothingOrAttrVal)
+function aph (elems, context) {
+  return new Apheleia(elems, context)
 }
 
 // Plugs in new methods to the Apheleia prototype
 aph.plug = function (key, fn) { Apheleia.prototype[key] = fn; };
-
-// querySelector shortcut
-aph.find = function (str, ctx) { return (ctx || document).querySelector(str); };
-
-// querySelectorAll shortcut
-aph.findAll = function (str, ctx) { return (ctx || document).querySelectorAll(str); };
 
 return aph;
 

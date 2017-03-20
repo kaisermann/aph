@@ -31,7 +31,7 @@ describe('Creating and selecting items', function () {
   it('should create an Apheleia wrapper around a passed node', function () {
     assert.equal(aph(element).elements.length, 1)
   })
-  
+
   // TO-DO: need to create context test cases
 })
 
@@ -57,35 +57,14 @@ describe('DOM Manipulation', function () {
 })
 
 describe('Element manipulation', function () {
-  it('should accept inline attribute setup', function () {
-    aph(element, 'style', 'width: 100px')
-    assert.equal(element.style.width, '100px')
-
-    aph(element).attr('style', 'width: 200px')
-    assert.equal(element.style.width, '200px')
-  })
-
   it('should accept an object as attributes setup', function () {
-    aph(element, { style: 'width: 300px' })
-    assert.equal(element.style.width, '300px')
-
     aph(element).attr({ style: 'width: 400px' })
     assert.equal(element.style.width, '400px')
-  })
-
-  it('should accept inline data setup', function () {
-    aph(element).data('slug', 'test-slug')
-    assert.equal(element.getAttribute('data-slug'), 'test-slug')
   })
 
   it('should accept an object as data setup', function () {
     aph(element).data({ slug: 'test-slug-2' })
     assert.equal(element.getAttribute('data-slug'), 'test-slug-2')
-  })
-
-  it('should accept inline property setup', function () {
-    aph(element).prop('testProperty', 10)
-    assert.equal(element.testProperty, 10)
   })
 
   it('should accept an object as properties setup', function () {
@@ -97,7 +76,7 @@ describe('Element manipulation', function () {
 describe('Class manipulation', function () {
   it('should return false if all divs has same class (for this test case)', function () {
     aph('<div>').appendTo(document.body).get(0)
-    aph('<div>', 'class', 'test-class').appendTo(document.body).get(0)
+    aph('<div>').addClass('test-class').appendTo(document.body).get(0)
     assert.equal(aph('div').hasClass('test-class', true), false)
   })
 
