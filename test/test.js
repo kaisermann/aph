@@ -31,6 +31,8 @@ describe('Creating and selecting items', function () {
   it('should create an Apheleia wrapper around a passed node', function () {
     assert.equal(aph(element).elements.length, 1)
   })
+  
+  // TO-DO: need to create context test cases
 })
 
 describe('DOM Manipulation', function () {

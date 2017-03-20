@@ -2,9 +2,10 @@ class Apheleia {
   constructor (elems, contextOrAttr, nothingOrAttrVal) {
     // Second parameter is used as context when a HTML Element is passed
     // Second/Third parameter are used as attribute object/list/pair when creating elements
-    this.context = contextOrAttr instanceof Element ? contextOrAttr : document
-    this.elements = this.parseElems(elems)
-    this.length = this.elements.length
+
+    this.elements = aphParseElements(elems,
+      this.context = aphParseContext(contextOrAttr)
+    )
 
     // If second parameter is not an html element and not undefined, we assume it's an attribute obj
     if (!(contextOrAttr instanceof Element) && contextOrAttr) {
@@ -12,34 +13,13 @@ class Apheleia {
     }
   }
 
-  parseElems (stringOrListOrNode) {
-    // If single string
-    if ('' + stringOrListOrNode === stringOrListOrNode) {
-      const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
-      // If creation string
-      if (isCreationStr) {
-        return [document.createElement(isCreationStr[1])]
-      }
-      // If not a creation string, let's search for the elements
-      return Array.prototype.slice.call(this.context.querySelectorAll(stringOrListOrNode))
-    }
-    // If single node
-    if (stringOrListOrNode instanceof Element) {
-      return [stringOrListOrNode]
-    }
-    // If node list
-    if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
-      return Array.prototype.slice.call(stringOrListOrNode)
-    }
-    // If array, we're done
-    if (Array.isArray(stringOrListOrNode)) {
-      return stringOrListOrNode
-    }
-    return []
+  filter (cb) {
+    return new Apheleia(this.elements.filter(cb))
   }
 
   get (index) {
-    return index !== undefined ? this.elements[index] : this.elements
+    // Type coercion uses less bytes than "index !== undefined"
+    return +index === index ? this.elements[index] : this.elements
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -56,6 +36,7 @@ class Apheleia {
 
     let tmpObj = objOrKey
     // Is the first parameter a key string?
+    // Type coercion uses less bytes than "typeof objOrKey ==='string'"
     if ('' + objOrKey === objOrKey) {
       // If passed only a key, let's return the attribute
       if (nothingOrValue === undefined) {
@@ -68,17 +49,17 @@ class Apheleia {
     }
 
     // Finally, let's set the attributes
-    this.each(elem =>
+    return this.each(elem =>
       Object.keys(tmpObj).forEach(key =>
         elem.setAttribute(prepend + key, tmpObj[key])
       )
     )
-    return this
   }
 
   prop (objOrKey, nothingOrValue) {
     let tmpObj = objOrKey
     // Is the first parameter a key string?
+    // Type coercion uses less bytes than "typeof objOrKey ==='string'"
     if ('' + objOrKey === objOrKey) {
       // If passed only a key, let's return the property
       if (nothingOrValue === undefined) {
@@ -91,22 +72,15 @@ class Apheleia {
     }
 
     // Finally, let's set the properties
-    this.each(elem =>
+    return this.each(elem =>
       Object.keys(tmpObj).forEach(key => {
         elem[key] = tmpObj[key]
       })
     )
-    return this
   }
 
   data (objOrKey, nothingOrValue) {
     return this.attr(objOrKey, nothingOrValue, 'data-')
-  }
-
-  filter (cb) {
-    return new Apheleia(this.elements.filter(elem =>
-      cb(elem)
-    ))
   }
 
   appendTo (newParent) {
@@ -159,8 +133,48 @@ class Apheleia {
   }
   once (events, cb) {
     const onceFn = e => (cb(e) || this.off(e.type, onceFn))
-    this.on(events, onceFn)
+    return this.on(events, onceFn)
   }
+}
+
+// "Private" Helpers. No need to keep this in the prototype.
+const aphParseContext = (contextOrAttr) => {
+  return contextOrAttr instanceof Element
+    ? contextOrAttr // If already a html element
+    : Apheleia.prototype.isPrototypeOf(contextOrAttr)
+      ? contextOrAttr.get(0) // If already apheleia object
+      : document // Probably an attribute was passed. Return the document.
+}
+
+const aphParseElements = (stringOrListOrNode, ctx) => {
+  // If single string
+  // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
+  if ('' + stringOrListOrNode === stringOrListOrNode) {
+    const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
+    // If creation string
+    if (isCreationStr) {
+      return [document.createElement(isCreationStr[1])]
+    }
+    // If not a creation string, let's search for the elements
+    return Array.prototype.slice.call(ctx.querySelectorAll(stringOrListOrNode))
+  }
+  // If single node
+  if (stringOrListOrNode instanceof Element) {
+    return [stringOrListOrNode]
+  }
+  // If node list
+  if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
+    return Array.prototype.slice.call(stringOrListOrNode)
+  }
+  // If array, we're done
+  if (Array.isArray(stringOrListOrNode)) {
+    return stringOrListOrNode
+  }
+  // If another apheleia object is passed, get all elements from it
+  if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
+    return stringOrListOrNode.get()
+  }
+  return []
 }
 
 export default Apheleia
