@@ -1,16 +1,8 @@
 class Apheleia {
-  constructor (elems, contextOrAttr, nothingOrAttrVal) {
-    // Second parameter is used as context when a HTML Element is passed
-    // Second/Third parameter are used as attribute object/list/pair when creating elements
-
+  constructor (elems, context) {
     this.elements = aphParseElements(elems,
-      this.context = aphParseContext(contextOrAttr)
+      this.context = aphParseContext(context)
     )
-
-    // If second parameter is not an html element and not undefined, we assume it's an attribute obj
-    if (!(contextOrAttr instanceof Element) && contextOrAttr) {
-      this.attr(contextOrAttr, nothingOrAttrVal)
-    }
   }
 
   filter (cb) {

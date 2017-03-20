@@ -1,6 +1,6 @@
 # Aph
 
-A very lightweight (**859 bytes** minified and gzipped), easy and simple DOM manipulation library.
+A very lightweight (**841 bytes** minified and gzipped), easy and simple DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -21,7 +21,7 @@ The goal of this library is to be a versatile and lightweight way of doing some 
 ### aph()
 
 ```javascript
-aph(elementsOrSelector[, contextOrattributeObjOrKey, nothingOrAttrValue])
+aph(elementsOrSelector[, context])
 ```
 
 Initializes a new instance of Apheleia with the specified or created elements.
@@ -33,11 +33,8 @@ If the first argument is a string between `<` and `>`, aph will create the eleme
 **Examples:**
 
 ```javascript
-// Creates an <img src="http://lorempixel.com/500/500"
-aph('<img>', src, 'http://lorempixel.com/500/500')
-
-// Creates an <img src="http://lorempixel.com/500/500"
-aph('<img>', { src: 'http://lorempixel.com/500/500' })
+// Creates an an empty <img> element
+aph('<img>')
 
 // Search for all img elements
 aph('img')
@@ -145,7 +142,8 @@ aph(...).once(events, callbackFn)
 ## Chaining
 Almost all methods can be chained for a more fluid code.
 ```javascript
-const aImg = aph('<img>', { src: 'https://lorempixel.com/500/500', id: 'test-img' })
+const aImg = aph('<img>')
+  .attr({ src: 'https://lorempixel.com/500/500', id: 'test-img' })
   .addClass('img-responsive')
   .toggleClass('is-active')
   .prop('isControlled', false)
@@ -160,17 +158,19 @@ const aImg = aph('<img>', { src: 'https://lorempixel.com/500/500', id: 'test-img
 ### Extending
 
 ```javascript
-// Plugs in new methods to the aph() prototype
-aph.plug(key, fn)
+// Plugs in new methods to the Apheleia prototype
+aph.plug(key, function(){
+  ...
+})
 ```
 
-Extends the `aph()` prototype with a new method. `this` references the Apheleia object.
+Extends the `Apheleia` prototype with the passed method. `this` references the Apheleia object.
 
 **Example - a chainable log function:**
 
 ```javascript
 aph.plug('log', function() {
-    this.each(function(item, index) {
+    this.each((item, index) => {
       console.log(index, item)
     })
     return this
