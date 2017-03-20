@@ -12,7 +12,7 @@ var Apheleia = function Apheleia (elems, context) {
 
 Apheleia.prototype.filter = function filter (cb) {
   // Returns a new Apheleia instance with the filtered elements
-  return new Apheleia(this.elements.filter(cb))
+  return new Apheleia(this.elements.filter(cb), this.context)
 };
 
 Apheleia.prototype.find = function find (selector, single) {

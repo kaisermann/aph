@@ -7,7 +7,7 @@ class Apheleia {
 
   filter (cb) {
     // Returns a new Apheleia instance with the filtered elements
-    return new Apheleia(this.elements.filter(cb))
+    return new Apheleia(this.elements.filter(cb), this.context)
   }
 
   find (selector, single) {
