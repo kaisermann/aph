@@ -22,7 +22,7 @@ describe('Apheleia plugins', function () {
 describe('Creating and selecting items', function () {
   it('should create an element when a string between <str> is passed', function () {
     element = aph('<div>').appendTo(document.body).get(0)
-    element2 = aph('<div>', 'class', 'test-class').appendTo(document.body).get(0)
+    element2 = aph('<div>').appendTo(document.body).get(0)
     assert.equal(element.tagName.toLowerCase(), 'div')
     assert.equal(aph('<img>').get(0).tagName.toLowerCase(), 'img')
     assert.equal(aph('<div/>').get(0).tagName.toLowerCase(), 'div')
