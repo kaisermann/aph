@@ -10,14 +10,9 @@ class Apheleia {
     return new Apheleia(this.elements.filter(cb), this.context)
   }
 
-  find (selector, single) {
+  find (selector) {
     // Creates a new Apheleia instance with the elements found.
-    // If single = true, a 'querySelector' is executed
-    // If single is falsy, 'querySelectorAll' is executed
-    return new Apheleia(
-      this.elements[0]['querySelector' + (single ? '' : 'All')](selector),
-      this.elements[0] // Context will be the used element for querying
-    )
+    return new Apheleia(selector, this.elements[0])
   }
 
   get (index) {
@@ -159,7 +154,7 @@ const aphParseContext = (contextOrAttr) => {
 }
 
 const aphParseElements = (stringOrListOrNode, ctx) => {
-  // If single string
+  // If string passed
   // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
   if ('' + stringOrListOrNode === stringOrListOrNode) {
     const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
@@ -168,21 +163,29 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
       return [document.createElement(isCreationStr[1])]
     }
     // If not a creation string, let's search for the elements
-    return Array.prototype.slice.call(ctx.querySelectorAll(stringOrListOrNode))
+    return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
+        ? [document.getElementById(stringOrListOrNode)]
+        : Array.prototype.slice.call(
+            /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
+              ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
+              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div)
+                ? ctx.getElementsByTagName(stringOrListOrNode)
+                : ctx.querySelectorAll(stringOrListOrNode) // anything else
+          )
   }
-  // If single node
+  // If html element passed
   if (stringOrListOrNode instanceof Element) {
     return [stringOrListOrNode]
   }
-  // If node list
+  // If node list passed
   if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
     return Array.prototype.slice.call(stringOrListOrNode)
   }
-  // If array, we're done
+  // If array passed, just return
   if (Array.isArray(stringOrListOrNode)) {
     return stringOrListOrNode
   }
-  // If another apheleia object is passed, get all elements from it
+  // If another apheleia object is passed, get its elements
   if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
     return stringOrListOrNode.elements
   }

@@ -32,6 +32,11 @@ describe('Creating and selecting items', function () {
     assert.equal(aph(element).elements.length, 1)
   })
 
+  it('should find children itens of the first element with .find()', function () {
+    aph('<span>').appendTo(element2)
+    assert.equal(aph(element2).find('span').get(0).tagName.toLowerCase(), 'span')
+  })
+
   // TO-DO: need to create context test cases
 })
 
