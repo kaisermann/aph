@@ -5,16 +5,17 @@ class Apheleia {
     )
   }
 
+  // Returns a new Apheleia instance with the filtered elements
   filter (cb) {
-    // Returns a new Apheleia instance with the filtered elements
     return new Apheleia(this.elements.filter(cb), this.context)
   }
 
+  // Creates a new Apheleia instance with the elements found.
   find (selector) {
-    // Creates a new Apheleia instance with the elements found.
     return new Apheleia(selector, this.elements[0])
   }
 
+  // Gets the specified element or the whole array if no index was defined
   get (index) {
     // Type coercion uses less bytes than "index !== undefined"
     return +index === index ? this.elements[index] : this.elements
@@ -22,7 +23,7 @@ class Apheleia {
 
   // Iterates through the elements with a 'callback(element, index)''
   each (cb) {
-    this.elements.forEach(cb)
+    this.elements.forEach(cb.bind(this))
     return this
   }
 
@@ -31,53 +32,40 @@ class Apheleia {
     // If prepend is falsy, it would be an empty string anyway
     prepend = prepend || ''
 
-    let tmpObj = objOrKey
-    // Is the first parameter a key string?
-    // Type coercion uses less bytes than "typeof objOrKey ==='string'"
     if ('' + objOrKey === objOrKey) {
-      // If passed only a key, let's return the attribute
-      if (nothingOrValue === undefined) {
-        return this.elements[0].getAttribute(prepend + objOrKey)
-      }
-      // If not, let's objectify the key/value pair
-      tmpObj = {
-        [objOrKey]: nothingOrValue,
-      }
-    }
-
-    // Finally, let's set the attributes
-    return this.each(elem =>
-      Object.keys(tmpObj).forEach(key =>
-        elem.setAttribute(prepend + key, tmpObj[key])
+      return (
+        nothingOrValue === undefined
+          ? this.elements[0].getAttribute(prepend + objOrKey)
+          : this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
       )
-    )
-  }
-
-  prop (objOrKey, nothingOrValue) {
-    let tmpObj = objOrKey
-    // Is the first parameter a key string?
-    // Type coercion uses less bytes than "typeof objOrKey ==='string'"
-    if ('' + objOrKey === objOrKey) {
-      // If passed only a key, let's return the property
-      if (nothingOrValue === undefined) {
-        return this.elements[0][objOrKey]
-      }
-      // If not, let's objectify the key/value pair
-      tmpObj = {
-        [objOrKey]: nothingOrValue,
-      }
     }
 
-    // Finally, let's set the properties
-    return this.each(elem =>
-      Object.keys(tmpObj).forEach(key => {
-        elem[key] = tmpObj[key]
-      })
-    )
+    return this.each(elem => {
+      for (const key in objOrKey) {
+        elem.setAttribute(prepend + key, objOrKey[key])
+      }
+    })
   }
 
   data (objOrKey, nothingOrValue) {
     return this.attr(objOrKey, nothingOrValue, 'data-')
+  }
+
+  // Node propertiy manipulation method
+  prop (objOrKey, nothingOrValue) {
+    if ('' + objOrKey === objOrKey) {
+      return (
+        nothingOrValue === undefined
+          ? this.elements[0][objOrKey]
+          : this.each(elem => { elem[objOrKey] = nothingOrValue })
+      )
+    }
+
+    return this.each(elem => {
+      for (const key in objOrKey) {
+        elem[key] = objOrKey[key]
+      }
+    })
   }
 
   appendTo (newParent) {
@@ -158,17 +146,17 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
   // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
   if ('' + stringOrListOrNode === stringOrListOrNode) {
     const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
-    // If creation string
+    // If creation string, create the element
     if (isCreationStr) {
       return [document.createElement(isCreationStr[1])]
     }
     // If not a creation string, let's search for the elements
     return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
-        ? [document.getElementById(stringOrListOrNode)]
+        ? [window[stringOrListOrNode.slice(1)]]
         : Array.prototype.slice.call(
             /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
               ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
-              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div)
+              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
                 ? ctx.getElementsByTagName(stringOrListOrNode)
                 : ctx.querySelectorAll(stringOrListOrNode) // anything else
           )
@@ -177,18 +165,22 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
   if (stringOrListOrNode instanceof Element) {
     return [stringOrListOrNode]
   }
+
   // If node list passed
   if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
     return Array.prototype.slice.call(stringOrListOrNode)
   }
+
   // If array passed, just return
   if (Array.isArray(stringOrListOrNode)) {
     return stringOrListOrNode
   }
+
   // If another apheleia object is passed, get its elements
   if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
     return stringOrListOrNode.elements
   }
+
   return []
 }
 

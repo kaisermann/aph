@@ -10,16 +10,17 @@ var Apheleia = function Apheleia (elems, context) {
   );
 };
 
+// Returns a new Apheleia instance with the filtered elements
 Apheleia.prototype.filter = function filter (cb) {
-  // Returns a new Apheleia instance with the filtered elements
   return new Apheleia(this.elements.filter(cb), this.context)
 };
 
+// Creates a new Apheleia instance with the elements found.
 Apheleia.prototype.find = function find (selector) {
-  // Creates a new Apheleia instance with the elements found.
   return new Apheleia(selector, this.elements[0])
 };
 
+// Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
   // Type coercion uses less bytes than "index !== undefined"
   return +index === index ? this.elements[index] : this.elements
@@ -27,7 +28,7 @@ Apheleia.prototype.get = function get (index) {
 
 // Iterates through the elements with a 'callback(element, index)''
 Apheleia.prototype.each = function each (cb) {
-  this.elements.forEach(cb);
+  this.elements.forEach(cb.bind(this));
   return this
 };
 
@@ -36,48 +37,40 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
   // If prepend is falsy, it would be an empty string anyway
   prepend = prepend || '';
 
-  var tmpObj = objOrKey;
-  // Is the first parameter a key string?
-  // Type coercion uses less bytes than "typeof objOrKey ==='string'"
   if ('' + objOrKey === objOrKey) {
-    // If passed only a key, let's return the attribute
-    if (nothingOrValue === undefined) {
-      return this.elements[0].getAttribute(prepend + objOrKey)
-    }
-    // If not, let's objectify the key/value pair
-    tmpObj = {};
-      tmpObj[objOrKey] = nothingOrValue;
+    return (
+      nothingOrValue === undefined
+        ? this.elements[0].getAttribute(prepend + objOrKey)
+        : this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); })
+    )
   }
 
-  // Finally, let's set the attributes
-  return this.each(function (elem) { return Object.keys(tmpObj).forEach(function (key) { return elem.setAttribute(prepend + key, tmpObj[key]); }
-    ); }
-  )
-};
-
-Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
-  var tmpObj = objOrKey;
-  // Is the first parameter a key string?
-  // Type coercion uses less bytes than "typeof objOrKey ==='string'"
-  if ('' + objOrKey === objOrKey) {
-    // If passed only a key, let's return the property
-    if (nothingOrValue === undefined) {
-      return this.elements[0][objOrKey]
+  return this.each(function (elem) {
+    for (var key in objOrKey) {
+      elem.setAttribute(prepend + key, objOrKey[key]);
     }
-    // If not, let's objectify the key/value pair
-    tmpObj = {};
-      tmpObj[objOrKey] = nothingOrValue;
-  }
-
-  // Finally, let's set the properties
-  return this.each(function (elem) { return Object.keys(tmpObj).forEach(function (key) {
-      elem[key] = tmpObj[key];
-    }); }
-  )
+  })
 };
 
 Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
   return this.attr(objOrKey, nothingOrValue, 'data-')
+};
+
+// Node propertiy manipulation method
+Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
+  if ('' + objOrKey === objOrKey) {
+    return (
+      nothingOrValue === undefined
+        ? this.elements[0][objOrKey]
+        : this.each(function (elem) { elem[objOrKey] = nothingOrValue; })
+    )
+  }
+
+  return this.each(function (elem) {
+    for (var key in objOrKey) {
+      elem[key] = objOrKey[key];
+    }
+  })
 };
 
 Apheleia.prototype.appendTo = function appendTo (newParent) {
@@ -158,17 +151,17 @@ var aphParseElements = function (stringOrListOrNode, ctx) {
   // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
   if ('' + stringOrListOrNode === stringOrListOrNode) {
     var isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode);
-    // If creation string
+    // If creation string, create the element
     if (isCreationStr) {
       return [document.createElement(isCreationStr[1])]
     }
     // If not a creation string, let's search for the elements
     return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
-        ? [document.getElementById(stringOrListOrNode)]
+        ? [window[stringOrListOrNode.slice(1)]]
         : Array.prototype.slice.call(
             /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
               ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
-              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div)
+              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
                 ? ctx.getElementsByTagName(stringOrListOrNode)
                 : ctx.querySelectorAll(stringOrListOrNode) // anything else
           )
@@ -177,18 +170,22 @@ var aphParseElements = function (stringOrListOrNode, ctx) {
   if (stringOrListOrNode instanceof Element) {
     return [stringOrListOrNode]
   }
+
   // If node list passed
   if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
     return Array.prototype.slice.call(stringOrListOrNode)
   }
+
   // If array passed, just return
   if (Array.isArray(stringOrListOrNode)) {
     return stringOrListOrNode
   }
+
   // If another apheleia object is passed, get its elements
   if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
     return stringOrListOrNode.elements
   }
+
   return []
 };
 
