@@ -37,6 +37,26 @@ describe('Creating and selecting items', function () {
     assert.equal(aph(element2).find('span').get(0).tagName.toLowerCase(), 'span')
   })
 
+  it('should find when passed an #id selector', function () {
+    aph(element).attr('id', 'test-id')
+    assert.equal(aph('#test-id').get(0).tagName.toLowerCase(), 'div')
+  })
+
+  it('should find when passed an .class selector', function () {
+    aph(element).attr('class', 'test-class')
+    assert.equal(aph('.test-class').get(0).tagName.toLowerCase(), 'div')
+  })
+
+  it('should find when passed an singlet selector', function () {
+    aph(element).attr('class', 'test-class')
+    assert.equal(aph('div').get(0).tagName.toLowerCase(), 'div')
+  })
+
+  it('should find when passed another Apheleia instance', function () {
+    aph(element).attr('class', 'test-class')
+    assert.equal(aph(aph('div')).get(0).tagName.toLowerCase(), 'div')
+  })
+
   // TO-DO: need to create context test cases
 })
 
