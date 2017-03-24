@@ -57,6 +57,10 @@ describe('Creating and selecting items', function () {
     assert.equal(aph(aph('div')).get(0).tagName.toLowerCase(), 'div')
   })
 
+  it('should return all elements when .get() with no parameter', function () {
+    assert.equal(aph('*').get().length, 7)
+  })
+
   // TO-DO: need to create context test cases
 })
 
@@ -99,14 +103,35 @@ describe('Element manipulation', function () {
 })
 
 describe('Class manipulation', function () {
-  it('should return false if all divs has same class (for this test case)', function () {
+  it('should have added all classes passed as arguments', function () {
     aph('<div>').appendTo(document.body).get(0)
-    aph('<div>').addClass('test-class').appendTo(document.body).get(0)
+    aph('<div>').addClass(['test-class', 'test-class-2']).appendTo(document.body).get(0)
+    assert.equal(aph('.test-class').hasClass('test-class-2'), true)
+  })
+
+  it('should return false if all divs has same class (for this test case)', function () {
     assert.equal(aph('div').hasClass('test-class', true), false)
   })
 
   it('should return true if at least one div has the specified class', function () {
     assert.equal(aph('div').hasClass('test-class'), true)
+  })
+})
+
+describe('CSS manipulation', function () {
+  it('should set single css attribute', function () {
+    aph(element).css('opacity', 0.5)
+    assert.equal(aph(element).get(0).style.opacity, 0.5)
+  })
+
+  it('should set multiple css attribute', function () {
+    aph(element).css({display: 'inline', width: '500px'})
+    assert.equal(aph(element).get(0).style.width, '500px')
+    assert.equal(aph(element).get(0).style.display, 'inline')
+  })
+
+  it('should get single css attribute from first element', function () {
+    assert.equal(aph(element).css('opacity'), 0.5)
   })
 })
 
