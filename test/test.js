@@ -29,7 +29,7 @@ describe('Creating and selecting items', function () {
   })
 
   it('should create an Apheleia wrapper around a passed node', function () {
-    assert.equal(aph(element).elements.length, 1)
+    assert.equal(aph(element).length, 1)
   })
 
   it('should find children itens of the first element with .find()', function () {
@@ -76,7 +76,7 @@ describe('DOM Manipulation', function () {
   })
 
   it('should select existent elements by specified selector', function () {
-    assert.equal(aph('div').elements.length, 4)
+    assert.equal(aph('div').length, 4)
   })
 
   it('should delete all specified elements', function () {
@@ -135,10 +135,4 @@ describe('CSS manipulation', function () {
   })
 })
 
-// TO-DO
-// TO-DO
-// TO-DO
-// TO-DO
-// TO-DO
-// TO-DO
 // TO-DO

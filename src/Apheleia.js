@@ -1,33 +1,39 @@
 // Type coercion uses less bytes than "typeof str ==='string'"
 const isString = str => '' + str === str
+const arrProto = Array.prototype
 
 class Apheleia {
   constructor (elems, context) {
-    this.elements = aphParseElements(elems,
-      this.context = aphParseContext(context)
-    )
+    for (
+      let list = aphParseElements(
+        elems,
+        this.context = aphParseContext(context) // Sets current context
+      ), len = this.length = list.length; // Sets current length
+      len--; // Ends loop when reaches 0
+      this[len] = list[len] // Builds the array-like structure
+    );
   }
 
   // Returns a new Apheleia instance with the filtered elements
   filter (cb) {
-    return new Apheleia(this.elements.filter(cb), this.context)
+    return new Apheleia(arrProto.filter.call(this, cb), this.context)
   }
 
   // Creates a new Apheleia instance with the elements found.
   find (selector) {
-    return new Apheleia(selector, this.elements[0])
+    return new Apheleia(selector, this[0])
   }
 
   // Gets the specified element or the whole array if no index was defined
   get (index) {
     return +index === index
-      ? this.elements[index]
-      : this.elements
+      ? this[index]
+      : arrProto.slice.call(this)
   }
 
   // Iterates through the elements with a 'callback(element, index)''
   each (cb) {
-    this.elements.forEach(cb.bind(this))
+    for (let i = 0; i < this.length && cb.call(this, this[i], i++) !== false;);
     return this
   }
 
@@ -40,7 +46,7 @@ class Apheleia {
       return (
         1 in arguments // if value passed
           ? this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
-          : this.elements[0].getAttribute(prepend + objOrKey)
+          : this[0].getAttribute(prepend + objOrKey)
       )
     }
 
@@ -61,7 +67,7 @@ class Apheleia {
       return (
         1 in arguments // if value passed
           ? this.each(elem => { elem[objOrKey] = nothingOrValue })
-          : this.elements[0][objOrKey]
+          : this[0][objOrKey]
       )
     }
 
@@ -78,7 +84,7 @@ class Apheleia {
       return (
         1 in arguments // if value passed
           ? this.each(elem => { elem.style[objOrKey] = nothingOrValue })
-          : window.getComputedStyle(this.elements[0])[objOrKey]
+          : window.getComputedStyle(this[0])[objOrKey]
       )
     }
 
@@ -123,7 +129,7 @@ class Apheleia {
   }
 
   hasClass (className, every) {
-    return this.elements[every ? 'every' : 'some'](elem =>
+    return arrProto[every ? 'every' : 'some'].call(this, elem =>
       elem.classList.contains(className)
     )
   }
@@ -162,7 +168,7 @@ const aphParseContext = (contextOrAttr) => {
   return contextOrAttr instanceof Element
     ? contextOrAttr // If already a html element
     : Apheleia.prototype.isPrototypeOf(contextOrAttr)
-      ? contextOrAttr.elements[0] // If already apheleia object
+      ? contextOrAttr[0] // If already apheleia object
       : document // Probably an attribute was passed. Return the document.
 }
 
@@ -178,7 +184,7 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
     // If not a creation string, let's search for the elements
     return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
         ? [window[stringOrListOrNode.slice(1)]]
-        : Array.prototype.slice.call(
+        : arrProto.slice.call(
             /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
               ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
               : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
@@ -192,18 +198,16 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
   }
 
   // If node list passed
-  if (NodeList.prototype.isPrototypeOf(stringOrListOrNode)) {
-    return Array.prototype.slice.call(stringOrListOrNode)
+  // If another apheleia object is passed, get its elements
+  if (
+    NodeList.prototype.isPrototypeOf(stringOrListOrNode) ||
+    Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
+    return arrProto.slice.call(stringOrListOrNode)
   }
 
   // If array passed, just return
   if (Array.isArray(stringOrListOrNode)) {
     return stringOrListOrNode
-  }
-
-  // If another apheleia object is passed, get its elements
-  if (Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
-    return stringOrListOrNode.elements
   }
 
   return []
