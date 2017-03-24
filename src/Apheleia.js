@@ -1,9 +1,9 @@
 // Type coercion uses less bytes than "typeof str ==='string'"
-const isString = str => '' + str === str
 const arrProto = Array.prototype
 
 class Apheleia {
-  constructor (elems, context) {
+  constructor (elems, context, prevInstance) {
+    this.prev = prevInstance
     for (
       let list = aphParseElements(
         elems,
@@ -16,12 +16,12 @@ class Apheleia {
 
   // Returns a new Apheleia instance with the filtered elements
   filter (cb) {
-    return new Apheleia(arrProto.filter.call(this, cb), this.context)
+    return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
   }
 
   // Creates a new Apheleia instance with the elements found.
   find (selector) {
-    return new Apheleia(selector, this[0])
+    return new Apheleia(selector, this[0], this)
   }
 
   // Gets the specified element or the whole array if no index was defined
@@ -33,6 +33,8 @@ class Apheleia {
 
   // Iterates through the elements with a 'callback(element, index)''
   each (cb) {
+    // Iterates through the Apheleia object.
+    // If the callback returns false, the iteration stops.
     for (let i = 0; i < this.length && cb.call(this, this[i], i++) !== false;);
     return this
   }
@@ -42,11 +44,11 @@ class Apheleia {
     // If prepend is falsy, it would be an empty string anyway
     prepend = prepend || ''
 
-    if (isString(objOrKey)) {
+    if ('' + objOrKey === objOrKey) {
       return (
-        1 in arguments // if value passed
-          ? this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
-          : this[0].getAttribute(prepend + objOrKey)
+        nothingOrValue === undefined
+          ? this[0].getAttribute(prepend + objOrKey)
+          : this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
       )
     }
 
@@ -63,11 +65,11 @@ class Apheleia {
 
   // Node property manipulation method
   prop (objOrKey, nothingOrValue) {
-    if (isString(objOrKey)) {
+    if ('' + objOrKey === objOrKey) {
       return (
-        1 in arguments // if value passed
-          ? this.each(elem => { elem[objOrKey] = nothingOrValue })
-          : this[0][objOrKey]
+        nothingOrValue === undefined
+          ? this[0][objOrKey]
+          : this.each(elem => { elem[objOrKey] = nothingOrValue })
       )
     }
 
@@ -80,11 +82,11 @@ class Apheleia {
 
   // CSS
   css (objOrKey, nothingOrValue) {
-    if (isString(objOrKey)) {
+    if ('' + objOrKey === objOrKey) {
       return (
-        1 in arguments // if value passed
-          ? this.each(elem => { elem.style[objOrKey] = nothingOrValue })
-          : window.getComputedStyle(this[0])[objOrKey]
+        nothingOrValue === undefined
+          ? window.getComputedStyle(this[0])[objOrKey]
+          : this.each(elem => { elem.style[objOrKey] = nothingOrValue })
       )
     }
 
@@ -114,7 +116,7 @@ class Apheleia {
 
   addClass (stringOrArray) {
     return this.each(elem =>
-      isString(stringOrArray)
+      '' + stringOrArray === stringOrArray
         ? elem.classList.add(stringOrArray)
         : elem.classList.add.apply(elem.classList, stringOrArray)
     )
@@ -122,7 +124,7 @@ class Apheleia {
 
   removeClass (stringOrArray) {
     return this.each(elem =>
-      isString(stringOrArray)
+      '' + stringOrArray === stringOrArray
         ? elem.classList.remove(stringOrArray)
         : elem.classList.remove.apply(elem.classList, stringOrArray)
     )
@@ -158,8 +160,11 @@ class Apheleia {
   }
 
   once (events, cb) {
-    const onceFn = e => (cb(e) || this.off(e.type, onceFn))
-    return this.on(events, onceFn)
+    const self = this
+    return self.on(events, function onceFn (e) {
+      cb.call(this, e)
+      self.off(e.type, onceFn)
+    })
   }
 }
 
@@ -175,7 +180,7 @@ const aphParseContext = (contextOrAttr) => {
 // Parses the elements passed to aph()
 const aphParseElements = (stringOrListOrNode, ctx) => {
   // If string passed
-  if (isString(stringOrListOrNode)) {
+  if ('' + stringOrListOrNode === stringOrListOrNode) {
     const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
     // If creation string, create the element
     if (isCreationStr) {

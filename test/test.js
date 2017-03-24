@@ -21,11 +21,11 @@ describe('Apheleia plugins', function () {
 
 describe('Creating and selecting items', function () {
   it('should create an element when a string between <str> is passed', function () {
-    element = aph('<div>').appendTo(document.body).get(0)
-    element2 = aph('<div>').appendTo(document.body).get(0)
+    element = aph('<div>').appendTo(document.body)[0]
+    element2 = aph('<div>').appendTo(document.body)[0]
     assert.equal(element.tagName.toLowerCase(), 'div')
-    assert.equal(aph('<img>').get(0).tagName.toLowerCase(), 'img')
-    assert.equal(aph('<div/>').get(0).tagName.toLowerCase(), 'div')
+    assert.equal(aph('<img>')[0].tagName.toLowerCase(), 'img')
+    assert.equal(aph('<div/>')[0].tagName.toLowerCase(), 'div')
   })
 
   it('should create an Apheleia wrapper around a passed node', function () {
@@ -34,27 +34,27 @@ describe('Creating and selecting items', function () {
 
   it('should find children itens of the first element with .find()', function () {
     aph('<span>').appendTo(element2)
-    assert.equal(aph(element2).find('span').get(0).tagName.toLowerCase(), 'span')
+    assert.equal(aph(element2).find('span')[0].tagName.toLowerCase(), 'span')
   })
 
   it('should find when passed an #id selector', function () {
     aph(element).attr('id', 'test-id')
-    assert.equal(aph('#test-id').get(0).tagName.toLowerCase(), 'div')
+    assert.equal(aph('#test-id')[0].tagName.toLowerCase(), 'div')
   })
 
   it('should find when passed an .class selector', function () {
     aph(element).attr('class', 'test-class')
-    assert.equal(aph('.test-class').get(0).tagName.toLowerCase(), 'div')
+    assert.equal(aph('.test-class')[0].tagName.toLowerCase(), 'div')
   })
 
   it('should find when passed an singlet selector', function () {
     aph(element).attr('class', 'test-class')
-    assert.equal(aph('div').get(0).tagName.toLowerCase(), 'div')
+    assert.equal(aph('div')[0].tagName.toLowerCase(), 'div')
   })
 
   it('should find when passed another Apheleia instance', function () {
     aph(element).attr('class', 'test-class')
-    assert.equal(aph(aph('div')).get(0).tagName.toLowerCase(), 'div')
+    assert.equal(aph(aph('div'))[0].tagName.toLowerCase(), 'div')
   })
 
   it('should return all elements when .get() with no parameter', function () {
@@ -104,8 +104,8 @@ describe('Element manipulation', function () {
 
 describe('Class manipulation', function () {
   it('should have added all classes passed as arguments', function () {
-    aph('<div>').appendTo(document.body).get(0)
-    aph('<div>').addClass(['test-class', 'test-class-2']).appendTo(document.body).get(0)
+    aph('<div>').appendTo(document.body)
+    aph('<div>').addClass(['test-class', 'test-class-2']).appendTo(document.body)
     assert.equal(aph('.test-class').hasClass('test-class-2'), true)
   })
 
@@ -121,13 +121,13 @@ describe('Class manipulation', function () {
 describe('CSS manipulation', function () {
   it('should set single css attribute', function () {
     aph(element).css('opacity', 0.5)
-    assert.equal(aph(element).get(0).style.opacity, 0.5)
+    assert.equal(aph(element)[0].style.opacity, 0.5)
   })
 
   it('should set multiple css attribute', function () {
     aph(element).css({display: 'inline', width: '500px'})
-    assert.equal(aph(element).get(0).style.width, '500px')
-    assert.equal(aph(element).get(0).style.display, 'inline')
+    assert.equal(aph(element)[0].style.width, '500px')
+    assert.equal(aph(element)[0].style.display, 'inline')
   })
 
   it('should get single css attribute from first element', function () {

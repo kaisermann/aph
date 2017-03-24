@@ -5,10 +5,10 @@
 }(this, (function () { 'use strict';
 
 // Type coercion uses less bytes than "typeof str ==='string'"
-var isString = function (str) { return '' + str === str; };
 var arrProto = Array.prototype;
 
-var Apheleia = function Apheleia (elems, context) {
+var Apheleia = function Apheleia (elems, context, prevInstance) {
+  this.prev = prevInstance;
   for (
     var list = aphParseElements(
       elems,
@@ -21,12 +21,12 @@ var Apheleia = function Apheleia (elems, context) {
 
 // Returns a new Apheleia instance with the filtered elements
 Apheleia.prototype.filter = function filter (cb) {
-  return new Apheleia(arrProto.filter.call(this, cb), this.context)
+  return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
 };
 
 // Creates a new Apheleia instance with the elements found.
 Apheleia.prototype.find = function find (selector) {
-  return new Apheleia(selector, this[0])
+  return new Apheleia(selector, this[0], this)
 };
 
 // Gets the specified element or the whole array if no index was defined
@@ -38,6 +38,8 @@ Apheleia.prototype.get = function get (index) {
 
 // Iterates through the elements with a 'callback(element, index)''
 Apheleia.prototype.each = function each (cb) {
+  // Iterates through the Apheleia object.
+  // If the callback returns false, the iteration stops.
   for (var i = 0; i < this.length && cb.call(this, this[i], i++) !== false;){  }
   return this
 };
@@ -47,11 +49,11 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
   // If prepend is falsy, it would be an empty string anyway
   prepend = prepend || '';
 
-  if (isString(objOrKey)) {
+  if ('' + objOrKey === objOrKey) {
     return (
-      1 in arguments // if value passed
-        ? this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); })
-        : this[0].getAttribute(prepend + objOrKey)
+      nothingOrValue === undefined
+        ? this[0].getAttribute(prepend + objOrKey)
+        : this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); })
     )
   }
 
@@ -68,11 +70,11 @@ Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
 
 // Node property manipulation method
 Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
-  if (isString(objOrKey)) {
+  if ('' + objOrKey === objOrKey) {
     return (
-      1 in arguments // if value passed
-        ? this.each(function (elem) { elem[objOrKey] = nothingOrValue; })
-        : this[0][objOrKey]
+      nothingOrValue === undefined
+        ? this[0][objOrKey]
+        : this.each(function (elem) { elem[objOrKey] = nothingOrValue; })
     )
   }
 
@@ -85,11 +87,11 @@ Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
 
 // CSS
 Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
-  if (isString(objOrKey)) {
+  if ('' + objOrKey === objOrKey) {
     return (
-      1 in arguments // if value passed
-        ? this.each(function (elem) { elem.style[objOrKey] = nothingOrValue; })
-        : window.getComputedStyle(this[0])[objOrKey]
+      nothingOrValue === undefined
+        ? window.getComputedStyle(this[0])[objOrKey]
+        : this.each(function (elem) { elem.style[objOrKey] = nothingOrValue; })
     )
   }
 
@@ -118,14 +120,14 @@ Apheleia.prototype.toggleClass = function toggleClass (className) {
 };
 
 Apheleia.prototype.addClass = function addClass (stringOrArray) {
-  return this.each(function (elem) { return isString(stringOrArray)
+  return this.each(function (elem) { return '' + stringOrArray === stringOrArray
       ? elem.classList.add(stringOrArray)
       : elem.classList.add.apply(elem.classList, stringOrArray); }
   )
 };
 
 Apheleia.prototype.removeClass = function removeClass (stringOrArray) {
-  return this.each(function (elem) { return isString(stringOrArray)
+  return this.each(function (elem) { return '' + stringOrArray === stringOrArray
       ? elem.classList.remove(stringOrArray)
       : elem.classList.remove.apply(elem.classList, stringOrArray); }
   )
@@ -155,10 +157,11 @@ Apheleia.prototype.off = function off (events, cb) {
 };
 
 Apheleia.prototype.once = function once (events, cb) {
-    var this$1 = this;
-
-  var onceFn = function (e) { return (cb(e) || this$1.off(e.type, onceFn)); };
-  return this.on(events, onceFn)
+  var self = this;
+  return self.on(events, function onceFn (e) {
+    cb.call(this, e);
+    self.off(e.type, onceFn);
+  })
 };
 
 // Parses the passed context
@@ -173,7 +176,7 @@ var aphParseContext = function (contextOrAttr) {
 // Parses the elements passed to aph()
 var aphParseElements = function (stringOrListOrNode, ctx) {
   // If string passed
-  if (isString(stringOrListOrNode)) {
+  if ('' + stringOrListOrNode === stringOrListOrNode) {
     var isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode);
     // If creation string, create the element
     if (isCreationStr) {
