@@ -1,3 +1,6 @@
+// Type coercion uses less bytes than "typeof str ==='string'"
+const isString = str => '' + str === str
+
 class Apheleia {
   constructor (elems, context) {
     this.elements = aphParseElements(elems,
@@ -17,8 +20,9 @@ class Apheleia {
 
   // Gets the specified element or the whole array if no index was defined
   get (index) {
-    // Type coercion uses less bytes than "index !== undefined"
-    return +index === index ? this.elements[index] : this.elements
+    return +index === index
+      ? this.elements[index]
+      : this.elements
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -32,11 +36,11 @@ class Apheleia {
     // If prepend is falsy, it would be an empty string anyway
     prepend = prepend || ''
 
-    if ('' + objOrKey === objOrKey) {
+    if (isString(objOrKey)) {
       return (
-        nothingOrValue === undefined
-          ? this.elements[0].getAttribute(prepend + objOrKey)
-          : this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
+        1 in arguments // if value passed
+          ? this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
+          : this.elements[0].getAttribute(prepend + objOrKey)
       )
     }
 
@@ -51,19 +55,36 @@ class Apheleia {
     return this.attr(objOrKey, nothingOrValue, 'data-')
   }
 
-  // Node propertiy manipulation method
+  // Node property manipulation method
   prop (objOrKey, nothingOrValue) {
-    if ('' + objOrKey === objOrKey) {
+    if (isString(objOrKey)) {
       return (
-        nothingOrValue === undefined
-          ? this.elements[0][objOrKey]
-          : this.each(elem => { elem[objOrKey] = nothingOrValue })
+        1 in arguments // if value passed
+          ? this.each(elem => { elem[objOrKey] = nothingOrValue })
+          : this.elements[0][objOrKey]
       )
     }
 
     return this.each(elem => {
       for (const key in objOrKey) {
         elem[key] = objOrKey[key]
+      }
+    })
+  }
+
+  // CSS
+  css (objOrKey, nothingOrValue) {
+    if (isString(objOrKey)) {
+      return (
+        1 in arguments // if value passed
+          ? this.each(elem => { elem.style[objOrKey] = nothingOrValue })
+          : window.getComputedStyle(this.elements[0])[objOrKey]
+      )
+    }
+
+    return this.each(elem => {
+      for (const key in objOrKey) {
+        elem.style[key] = objOrKey[key]
       }
     })
   }
@@ -85,28 +106,32 @@ class Apheleia {
     return this.each(elem => elem.classList.toggle(className))
   }
 
-  addClass (/* any number of arguments */) {
+  addClass (stringOrArray) {
     return this.each(elem =>
-      elem.classList.add(Array.prototype.slice.call(arguments))
+      isString(stringOrArray)
+        ? elem.classList.add(stringOrArray)
+        : elem.classList.add.apply(elem.classList, stringOrArray)
     )
   }
 
-  removeClass (/* any number of arguments */) {
+  removeClass (stringOrArray) {
     return this.each(elem =>
-      elem.classList.remove(Array.prototype.slice.call(arguments))
+      isString(stringOrArray)
+        ? elem.classList.remove(stringOrArray)
+        : elem.classList.remove.apply(elem.classList, stringOrArray)
     )
   }
 
   hasClass (className, every) {
-    return this.elements[every ? 'every' : 'some'](elem => {
-      return elem.classList.contains(className)
-    })
+    return this.elements[every ? 'every' : 'some'](elem =>
+      elem.classList.contains(className)
+    )
   }
 
   // Wrapper for Node methods
-  exec (fnName/*, any number of arguments */) {
+  exec (fnName, args) {
     return this.each(elem =>
-      elem[fnName].apply(elem, Array.prototype.slice.call(arguments, 1))
+      elem[fnName].apply(elem, args)
     )
   }
 
@@ -132,7 +157,7 @@ class Apheleia {
   }
 }
 
-// "Private" Helpers. No need to keep this in the prototype.
+// Parses the passed context
 const aphParseContext = (contextOrAttr) => {
   return contextOrAttr instanceof Element
     ? contextOrAttr // If already a html element
@@ -141,10 +166,10 @@ const aphParseContext = (contextOrAttr) => {
       : document // Probably an attribute was passed. Return the document.
 }
 
+// Parses the elements passed to aph()
 const aphParseElements = (stringOrListOrNode, ctx) => {
   // If string passed
-  // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
-  if ('' + stringOrListOrNode === stringOrListOrNode) {
+  if (isString(stringOrListOrNode)) {
     const isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode)
     // If creation string, create the element
     if (isCreationStr) {

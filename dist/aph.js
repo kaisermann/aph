@@ -4,6 +4,9 @@
 	(global.aph = factory());
 }(this, (function () { 'use strict';
 
+// Type coercion uses less bytes than "typeof str ==='string'"
+var isString = function (str) { return '' + str === str; };
+
 var Apheleia = function Apheleia (elems, context) {
   this.elements = aphParseElements(elems,
     this.context = aphParseContext(context)
@@ -22,8 +25,9 @@ Apheleia.prototype.find = function find (selector) {
 
 // Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
-  // Type coercion uses less bytes than "index !== undefined"
-  return +index === index ? this.elements[index] : this.elements
+  return +index === index
+    ? this.elements[index]
+    : this.elements
 };
 
 // Iterates through the elements with a 'callback(element, index)''
@@ -37,11 +41,11 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
   // If prepend is falsy, it would be an empty string anyway
   prepend = prepend || '';
 
-  if ('' + objOrKey === objOrKey) {
+  if (isString(objOrKey)) {
     return (
-      nothingOrValue === undefined
-        ? this.elements[0].getAttribute(prepend + objOrKey)
-        : this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); })
+      1 in arguments // if value passed
+        ? this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); })
+        : this.elements[0].getAttribute(prepend + objOrKey)
     )
   }
 
@@ -56,19 +60,36 @@ Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
   return this.attr(objOrKey, nothingOrValue, 'data-')
 };
 
-// Node propertiy manipulation method
+// Node property manipulation method
 Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
-  if ('' + objOrKey === objOrKey) {
+  if (isString(objOrKey)) {
     return (
-      nothingOrValue === undefined
-        ? this.elements[0][objOrKey]
-        : this.each(function (elem) { elem[objOrKey] = nothingOrValue; })
+      1 in arguments // if value passed
+        ? this.each(function (elem) { elem[objOrKey] = nothingOrValue; })
+        : this.elements[0][objOrKey]
     )
   }
 
   return this.each(function (elem) {
     for (var key in objOrKey) {
       elem[key] = objOrKey[key];
+    }
+  })
+};
+
+// CSS
+Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
+  if (isString(objOrKey)) {
+    return (
+      1 in arguments // if value passed
+        ? this.each(function (elem) { elem.style[objOrKey] = nothingOrValue; })
+        : window.getComputedStyle(this.elements[0])[objOrKey]
+    )
+  }
+
+  return this.each(function (elem) {
+    for (var key in objOrKey) {
+      elem.style[key] = objOrKey[key];
     }
   })
 };
@@ -90,31 +111,28 @@ Apheleia.prototype.toggleClass = function toggleClass (className) {
   return this.each(function (elem) { return elem.classList.toggle(className); })
 };
 
-Apheleia.prototype.addClass = function addClass (/* any number of arguments */) {
-    var arguments$1 = arguments;
-
-  return this.each(function (elem) { return elem.classList.add(Array.prototype.slice.call(arguments$1)); }
+Apheleia.prototype.addClass = function addClass (stringOrArray) {
+  return this.each(function (elem) { return isString(stringOrArray)
+      ? elem.classList.add(stringOrArray)
+      : elem.classList.add.apply(elem.classList, stringOrArray); }
   )
 };
 
-Apheleia.prototype.removeClass = function removeClass (/* any number of arguments */) {
-    var arguments$1 = arguments;
-
-  return this.each(function (elem) { return elem.classList.remove(Array.prototype.slice.call(arguments$1)); }
+Apheleia.prototype.removeClass = function removeClass (stringOrArray) {
+  return this.each(function (elem) { return isString(stringOrArray)
+      ? elem.classList.remove(stringOrArray)
+      : elem.classList.remove.apply(elem.classList, stringOrArray); }
   )
 };
 
 Apheleia.prototype.hasClass = function hasClass (className, every) {
-  return this.elements[every ? 'every' : 'some'](function (elem) {
-    return elem.classList.contains(className)
-  })
+  return this.elements[every ? 'every' : 'some'](function (elem) { return elem.classList.contains(className); }
+  )
 };
 
 // Wrapper for Node methods
-Apheleia.prototype.exec = function exec (fnName/*, any number of arguments */) {
-    var arguments$1 = arguments;
-
-  return this.each(function (elem) { return elem[fnName].apply(elem, Array.prototype.slice.call(arguments$1, 1)); }
+Apheleia.prototype.exec = function exec (fnName, args) {
+  return this.each(function (elem) { return elem[fnName].apply(elem, args); }
   )
 };
 
@@ -137,7 +155,7 @@ Apheleia.prototype.once = function once (events, cb) {
   return this.on(events, onceFn)
 };
 
-// "Private" Helpers. No need to keep this in the prototype.
+// Parses the passed context
 var aphParseContext = function (contextOrAttr) {
   return contextOrAttr instanceof Element
     ? contextOrAttr // If already a html element
@@ -146,10 +164,10 @@ var aphParseContext = function (contextOrAttr) {
       : document // Probably an attribute was passed. Return the document.
 };
 
+// Parses the elements passed to aph()
 var aphParseElements = function (stringOrListOrNode, ctx) {
   // If string passed
-  // Type coercion uses less bytes than "typeof stringOrListOrNode ==='string'"
-  if ('' + stringOrListOrNode === stringOrListOrNode) {
+  if (isString(stringOrListOrNode)) {
     var isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode);
     // If creation string, create the element
     if (isCreationStr) {

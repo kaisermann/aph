@@ -1,6 +1,6 @@
 {
   "name": "aph",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mini DOM manipulation library",
   "main": "src/aph.js",
   "repository": {
