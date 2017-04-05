@@ -14,12 +14,10 @@ The goal of this library is to be a versatile and lightweight way of doing some 
 * Chrome >= 28
 * Edge >= 12
 * Firefox >= 26
-* Firefox for Android >= 49
+* Firefox for Android 49
 * IE >= 10
-* Opera >= 
-* Safari>=  7
-* iOS Safari 7.0-7>= .1
-
-
+* iOS Safari >= 7.0-7.1
+* Opera >= 15
+* Safari >= 7
 
 ## [Documentation](https://github.com/kaisermann/aph/wiki)
