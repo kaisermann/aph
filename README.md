@@ -11,11 +11,15 @@ The goal of this library is to be a versatile and lightweight way of doing some 
 *<span style="color: red;">This project is in active development and it's still being changed very frequently. </span>*
 
 ## Support
-* **Chrome** >= 8
-* **Firefox** >= 4
-* **IE** >= 10
-* **Edge** >= 12
-* **Opera** >= 12
-* **Safari** >= 5.1
+* Chrome >= 28
+* Edge >= 12
+* Firefox >= 26
+* Firefox for Android >= 49
+* IE >= 10
+* Opera >= 
+* Safari>=  7
+* iOS Safari 7.0-7>= .1
+
+
 
 ## [Documentation](https://github.com/kaisermann/aph/wiki)
