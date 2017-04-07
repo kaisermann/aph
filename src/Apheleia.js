@@ -1,9 +1,8 @@
-// Type coercion uses less bytes than "typeof str ==='string'"
 const arrProto = Array.prototype
 
 class Apheleia {
-  constructor (elems, context, prevInstance) {
-    this.prev = prevInstance
+  constructor (elems, context, parentInstance) {
+    this.parent = parentInstance
     for (
       let list = aphParseElements(
         elems,

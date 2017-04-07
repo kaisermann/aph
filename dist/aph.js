@@ -4,11 +4,10 @@
 	(global.aph = factory());
 }(this, (function () { 'use strict';
 
-// Type coercion uses less bytes than "typeof str ==='string'"
 var arrProto = Array.prototype;
 
-var Apheleia = function Apheleia (elems, context, prevInstance) {
-  this.prev = prevInstance;
+var Apheleia = function Apheleia (elems, context, parentInstance) {
+  this.parent = parentInstance;
   for (
     var list = aphParseElements(
       elems,

@@ -61,6 +61,17 @@ describe('Creating and selecting items', function () {
     assert.equal(aph('*').get().length, 7)
   })
 
+  it('should return null when the apheleia has no \'.parent\' property', function () {
+    const aInstance = aph('*')
+    assert.equal(aInstance.parent, null)
+  })
+
+  it('should return the parent Apheleia instance when \'.parent\' is not null', function () {
+    const aInstance = aph('*')
+    const aNotherInstance = aInstance.find('div')
+    assert.equal(aNotherInstance.parent, aInstance)
+  })
+
   // TO-DO: need to create context test cases
 })
 
