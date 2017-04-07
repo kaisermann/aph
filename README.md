@@ -6,9 +6,29 @@ A very lightweight (**975 bytes** minified and gzipped), simple and easy-to-use 
 
 The goal of this library is to be a versatile and lightweight way of doing some simple DOM manipulations with vanilla JS. In no way it tries to replace any other framework such as jQuery, Zepto, Cash, etc.
 
+*<span style="color: red;">This project is in active development and it's still being changed very frequently. </span>*
+
+## Installation
+
+`aph` is available on the NPM and Bower Registry.
+
+**With npm**
+```
+npm install --save aph
+yarn add aph
+```
+
+**With bower**
+```
+bower install --save aph
+```
+
+[**Manual installation**](https://github.com/kaisermann/aph/blob/master/dist/aph.min.js)
+
+---
+
 **aph** uses ES6 module syntax for ease of importing it inside your code. For those concatenating scripts or including directly into the HTML, there's also an [Universal Module Definition version available](https://github.com/kaisermann/aph/tree/master/dist/aph.js).
 
-*<span style="color: red;">This project is in active development and it's still being changed very frequently. </span>*
 
 ## Support
 * Chrome >= 28
