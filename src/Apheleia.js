@@ -1,13 +1,14 @@
 const arrProto = Array.prototype
 
 class Apheleia {
-  constructor (elems, context, parentInstance) {
-    this.parent = parentInstance
+  constructor (elems, context, aphParentInstance) {
+    this.aphParent = aphParentInstance
     for (
       let list = aphParseElements(
         elems,
-        this.context = aphParseContext(context) // Sets current context
-      ), len = this.length = list.length; // Sets current length
+        (this.context = aphParseContext(context)) // Sets current context
+      ),
+        len = (this.length = list.length); // Sets current length
       len--; // Ends loop when reaches 0
       this[len] = list[len] // Builds the array-like structure
     );
@@ -25,9 +26,7 @@ class Apheleia {
 
   // Gets the specified element or the whole array if no index was defined
   get (index) {
-    return +index === index
-      ? this[index]
-      : arrProto.slice.call(this)
+    return +index === index ? this[index] : arrProto.slice.call(this)
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -44,11 +43,11 @@ class Apheleia {
     prepend = prepend || ''
 
     if ('' + objOrKey === objOrKey) {
-      return (
-        nothingOrValue === undefined
-          ? this[0].getAttribute(prepend + objOrKey)
-          : this.each(elem => elem.setAttribute(prepend + objOrKey, nothingOrValue))
-      )
+      return nothingOrValue === undefined
+        ? this[0].getAttribute(prepend + objOrKey)
+        : this.each(elem =>
+            elem.setAttribute(prepend + objOrKey, nothingOrValue)
+          )
     }
 
     return this.each(elem => {
@@ -65,11 +64,11 @@ class Apheleia {
   // Node property manipulation method
   prop (objOrKey, nothingOrValue) {
     if ('' + objOrKey === objOrKey) {
-      return (
-        nothingOrValue === undefined
-          ? this[0][objOrKey]
-          : this.each(elem => { elem[objOrKey] = nothingOrValue })
-      )
+      return nothingOrValue === undefined
+        ? this[0][objOrKey]
+        : this.each(elem => {
+          elem[objOrKey] = nothingOrValue
+        })
     }
 
     return this.each(elem => {
@@ -82,11 +81,11 @@ class Apheleia {
   // CSS
   css (objOrKey, nothingOrValue) {
     if ('' + objOrKey === objOrKey) {
-      return (
-        nothingOrValue === undefined
-          ? window.getComputedStyle(this[0])[objOrKey]
-          : this.each(elem => { elem.style[objOrKey] = nothingOrValue })
-      )
+      return nothingOrValue === undefined
+        ? window.getComputedStyle(this[0])[objOrKey]
+        : this.each(elem => {
+          elem.style[objOrKey] = nothingOrValue
+        })
     }
 
     return this.each(elem => {
@@ -114,18 +113,20 @@ class Apheleia {
   }
 
   addClass (stringOrArray) {
-    return this.each(elem =>
-      '' + stringOrArray === stringOrArray
-        ? elem.classList.add(stringOrArray)
-        : elem.classList.add.apply(elem.classList, stringOrArray)
+    return this.each(
+      elem =>
+        '' + stringOrArray === stringOrArray
+          ? elem.classList.add(stringOrArray)
+          : elem.classList.add.apply(elem.classList, stringOrArray)
     )
   }
 
   removeClass (stringOrArray) {
-    return this.each(elem =>
-      '' + stringOrArray === stringOrArray
-        ? elem.classList.remove(stringOrArray)
-        : elem.classList.remove.apply(elem.classList, stringOrArray)
+    return this.each(
+      elem =>
+        '' + stringOrArray === stringOrArray
+          ? elem.classList.remove(stringOrArray)
+          : elem.classList.remove.apply(elem.classList, stringOrArray)
     )
   }
 
@@ -137,24 +138,22 @@ class Apheleia {
 
   // Wrapper for Node methods
   exec (fnName, args) {
-    return this.each(elem =>
-      elem[fnName].apply(elem, args)
-    )
+    return this.each(elem => elem[fnName].apply(elem, args))
   }
 
   on (events, cb) {
     return this.each(elem =>
-      events.split(' ').forEach(eventName =>
-        elem.addEventListener(eventName, cb)
-      )
+      events
+        .split(' ')
+        .forEach(eventName => elem.addEventListener(eventName, cb))
     )
   }
 
   off (events, cb) {
     return this.each(elem =>
-      events.split(' ').forEach(eventName =>
-        elem.removeEventListener(eventName, cb)
-      )
+      events
+        .split(' ')
+        .forEach(eventName => elem.removeEventListener(eventName, cb))
     )
   }
 
@@ -168,12 +167,15 @@ class Apheleia {
 }
 
 // Parses the passed context
-const aphParseContext = (contextOrAttr) => {
-  return contextOrAttr instanceof Element
-    ? contextOrAttr // If already a html element
-    : Apheleia.prototype.isPrototypeOf(contextOrAttr)
-      ? contextOrAttr[0] // If already apheleia object
-      : document // Probably an attribute was passed. Return the document.
+const aphParseContext = elemOrAphOrStr => {
+  return elemOrAphOrStr instanceof Element
+    ? elemOrAphOrStr // If already a html element
+    : Apheleia.prototype.isPrototypeOf(elemOrAphOrStr)
+        ? elemOrAphOrStr[0] // If already apheleia object
+        // If string passed let's search for the element on the DOM
+        : '' + elemOrAphOrStr === elemOrAphOrStr
+            ? document.querySelector(elemOrAphOrStr)
+            : document // Return the document.
 }
 
 // Parses the elements passed to aph()
@@ -187,14 +189,14 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
     }
     // If not a creation string, let's search for the elements
     return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
-        ? [window[stringOrListOrNode.slice(1)]]
-        : arrProto.slice.call(
-            /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
-              ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
-              : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
+      ? [window[stringOrListOrNode.slice(1)]]
+      : arrProto.slice.call(
+          /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
+            ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
+            : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
                 ? ctx.getElementsByTagName(stringOrListOrNode)
                 : ctx.querySelectorAll(stringOrListOrNode) // anything else
-          )
+        )
   }
   // If html element passed
   if (stringOrListOrNode instanceof Element) {
@@ -205,7 +207,8 @@ const aphParseElements = (stringOrListOrNode, ctx) => {
   // If another apheleia object is passed, get its elements
   if (
     NodeList.prototype.isPrototypeOf(stringOrListOrNode) ||
-    Apheleia.prototype.isPrototypeOf(stringOrListOrNode)) {
+    Apheleia.prototype.isPrototypeOf(stringOrListOrNode)
+  ) {
     return arrProto.slice.call(stringOrListOrNode)
   }
 

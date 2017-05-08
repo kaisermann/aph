@@ -3,7 +3,7 @@ require('jsdom-global')()
 const assert = require('chai').assert
 const aph = require('../dist/aph')
 
-let element  // eslint-disable-line
+let element // eslint-disable-line
 let element2 // eslint-disable-line
 
 describe('Apheleia plugins', function () {
@@ -61,15 +61,25 @@ describe('Creating and selecting items', function () {
     assert.equal(aph('*').get().length, 7)
   })
 
-  it('should return null when the apheleia has no \'.parent\' property', function () {
+  it("should return null when the apheleia has no '.aphParent' property", function () {
     const aInstance = aph('*')
-    assert.equal(aInstance.parent, null)
+    assert.equal(aInstance.aphParent, null)
   })
 
-  it('should return the parent Apheleia instance when \'.parent\' is not null', function () {
+  it("should return the parent Apheleia instance when '.aphParent' is not null", function () {
     const aInstance = aph('*')
     const aNotherInstance = aInstance.find('div')
-    assert.equal(aNotherInstance.parent, aInstance)
+    assert.equal(aNotherInstance.aphParent, aInstance)
+  })
+
+  it('should search for a context element when string passed as parameter', function () {
+    const aInstance = aph('.test-class')
+    aph('<span>').addClass('inside-class').appendTo(aInstance[0])
+    assert.isTrue(
+      aph('.inside-class', '.test-class').context.classList.contains(
+        'test-class'
+      )
+    )
   })
 
   // TO-DO: need to create context test cases
@@ -116,7 +126,9 @@ describe('Element manipulation', function () {
 describe('Class manipulation', function () {
   it('should have added all classes passed as arguments', function () {
     aph('<div>').appendTo(document.body)
-    aph('<div>').addClass(['test-class', 'test-class-2']).appendTo(document.body)
+    aph('<div>')
+      .addClass(['test-class', 'test-class-2'])
+      .appendTo(document.body)
     assert.equal(aph('.test-class').hasClass('test-class-2'), true)
   })
 
@@ -136,7 +148,7 @@ describe('CSS manipulation', function () {
   })
 
   it('should set multiple css attribute', function () {
-    aph(element).css({display: 'inline', width: '500px'})
+    aph(element).css({ display: 'inline', width: '500px' })
     assert.equal(aph(element)[0].style.width, '500px')
     assert.equal(aph(element)[0].style.display, 'inline')
   })
