@@ -1,15 +1,10 @@
 {
   "root": true,
   "extends": "standard",
-  "globals": {
-    "wp": true
-  },
   "env": {
-    "node": true,
+    "node": false,
     "es6": true,
-    "amd": true,
-    "browser": true,
-    "jquery": false
+    "browser": true
   },
   "parserOptions": {
     "ecmaFeatures": {
@@ -22,8 +17,7 @@
     "sourceType": "module"
   },
   "plugins": [
-    "import",
-    "compat"
+    "import"
   ],
   "settings": {
     "import/core-modules": [],
@@ -41,7 +35,6 @@
       "exports": "always-multiline",
       "functions": "ignore"
     }],
-    "no-console": "off",
-    "compat/compat": 2
+    "no-console": "off"
   }
 }

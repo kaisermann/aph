@@ -6,6 +6,8 @@ function aph (elems, context) {
 }
 
 // Plugs in new methods to the Apheleia prototype
-aph.plug = (key, fn) => { Apheleia.prototype[key] = fn }
+aph.plug = function (key, fn) {
+  Apheleia.prototype[key] = fn
+}
 
 export default aph
