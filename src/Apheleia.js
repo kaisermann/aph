@@ -92,6 +92,11 @@ class Apheleia {
     return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
   }
 
+  // Returns a new Apheleia instance with a portion of the original collection
+  slice (min, max) {
+    return new Apheleia(arrProto.slice.call(this, min, max), this.context, this)
+  }
+
   // Creates a new Apheleia instance with the elements found.
   find (selector) {
     return new Apheleia(selector, this[0], this)
@@ -100,6 +105,56 @@ class Apheleia {
   // Gets the specified element or the whole array if no index was defined
   get (index) {
     return +index === index ? this[index] : arrProto.slice.call(this)
+  }
+
+  // Appends the passed html/aph
+  append (futureContent) {
+    return this.html(futureContent, (parent, child) =>
+      parent.appendChild(child)
+    )
+  }
+
+  appendTo (newParent) {
+    new Apheleia(newParent).append(this)
+    return this
+  }
+
+  // Prepends the passed html/aph
+  prepend (futureContent) {
+    return this.html(futureContent, (parent, child) =>
+      parent.insertBefore(child, parent.firstChild)
+    )
+  }
+
+  prependTo (newParent) {
+    new Apheleia(newParent).prepend(this)
+    return this
+  }
+
+  // Sets or gets the html
+  html (futureHTML, cb) {
+    if (futureHTML === undefined) return this[0].innerHTML
+    if (!Array.isArray(futureHTML)) futureHTML = [futureHTML]
+
+    // If a callback is received as the second argument
+    // let's pass the parent and child nodes
+    // and let the callback do all the work
+    if (typeof cb === 'function') {
+      return this.each(futureParent =>
+        futureHTML.forEach(futureChild =>
+          cb(futureParent, parseElementArg(futureChild))
+        )
+      )
+    }
+
+    // If the second argument is not a valid callback,
+    // we must rewrite all of a parents HTML
+    return this.each(futureParent => {
+      futureParent.innerHTML = ''
+      futureHTML.forEach(
+        futureChild => (futureParent.innerHTML += parseElementArg(futureChild))
+      )
+    })
   }
 
   // Node Data manipulation Methods
@@ -158,15 +213,6 @@ class Apheleia {
         elem.style[key] = objOrKey[key]
       }
     })
-  }
-
-  appendTo (newParent) {
-    return this.each(elem => parseElementArg(newParent).appendChild(elem))
-  }
-
-  prependTo (newParent) {
-    newParent = parseElementArg(newParent)
-    return this.each(elem => newParent.insertBefore(elem, newParent.firstChild))
   }
 
   delete () {

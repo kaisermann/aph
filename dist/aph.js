@@ -97,6 +97,11 @@ Apheleia.prototype.filter = function filter (cb) {
   return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
 };
 
+// Returns a new Apheleia instance with a portion of the original collection
+Apheleia.prototype.slice = function slice (min, max) {
+  return new Apheleia(arrProto.slice.call(this, min, max), this.context, this)
+};
+
 // Creates a new Apheleia instance with the elements found.
 Apheleia.prototype.find = function find (selector) {
   return new Apheleia(selector, this[0], this)
@@ -105,6 +110,52 @@ Apheleia.prototype.find = function find (selector) {
 // Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
   return +index === index ? this[index] : arrProto.slice.call(this)
+};
+
+// Appends the passed html/aph
+Apheleia.prototype.append = function append (futureContent) {
+  return this.html(futureContent, function (parent, child) { return parent.appendChild(child); }
+  )
+};
+
+Apheleia.prototype.appendTo = function appendTo (newParent) {
+  new Apheleia(newParent).append(this);
+  return this
+};
+
+// Prepends the passed html/aph
+Apheleia.prototype.prepend = function prepend (futureContent) {
+  return this.html(futureContent, function (parent, child) { return parent.insertBefore(child, parent.firstChild); }
+  )
+};
+
+Apheleia.prototype.prependTo = function prependTo (newParent) {
+  new Apheleia(newParent).prepend(this);
+  return this
+};
+
+// Sets or gets the html
+Apheleia.prototype.html = function html (futureHTML, cb) {
+  if (futureHTML === undefined) { return this[0].innerHTML }
+  if (!Array.isArray(futureHTML)) { futureHTML = [futureHTML]; }
+
+  // If a callback is received as the second argument
+  // let's pass the parent and child nodes
+  // and let the callback do all the work
+  if (typeof cb === 'function') {
+    return this.each(function (futureParent) { return futureHTML.forEach(function (futureChild) { return cb(futureParent, parseElementArg(futureChild)); }
+      ); }
+    )
+  }
+
+  // If the second argument is not a valid callback,
+  // we must rewrite all of a parents HTML
+  return this.each(function (futureParent) {
+    futureParent.innerHTML = '';
+    futureHTML.forEach(
+      function (futureChild) { return (futureParent.innerHTML += parseElementArg(futureChild)); }
+    );
+  })
 };
 
 // Node Data manipulation Methods
@@ -164,15 +215,6 @@ Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
   })
 };
 
-Apheleia.prototype.appendTo = function appendTo (newParent) {
-  return this.each(function (elem) { return parseElementArg(newParent).appendChild(elem); })
-};
-
-Apheleia.prototype.prependTo = function prependTo (newParent) {
-  newParent = parseElementArg(newParent);
-  return this.each(function (elem) { return newParent.insertBefore(elem, newParent.firstChild); })
-};
-
 Apheleia.prototype.delete = function delete$1 () {
   return this.each(function (elem) { return elem.parentNode.removeChild(elem); })
 };
@@ -230,7 +272,6 @@ Apheleia.prototype.once = function once (events, cb) {
   })
 };
 
-// Apheleia wrapper
 function aph (elems, context) {
   return new Apheleia(elems, context)
 }

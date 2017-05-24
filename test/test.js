@@ -12,29 +12,62 @@ describe('Creating and deleting items', function () {
     assert.equal(aph('<div/>')[0].tagName, 'DIV')
   })
 
-  it('should append an element to a specified parent node', function () {
+  it('should append an aph object to an HTMLElement', function () {
     aph('<div>').appendTo(document.body)
-    assert.equal(document.body.querySelectorAll('div').length, 1)
-  })
-
-  it('should append an element to the first element of another Apheleia instance', function () {
-    aph('<div>').appendTo(aph(document.body))
-    assert.equal(document.body.querySelectorAll('div').length, 2)
-  })
-
-  it('should prepend an element to a specified parent node', function () {
-    aph('<div>').prependTo(document.body)
-    assert.equal(document.body.querySelectorAll('div').length, 3)
-  })
-
-  it('should prepend an element to the first element of another Apheleia instance', function () {
-    aph('<div>').prependTo(aph(document.body))
+    aph(document.body)
+      .append(document.createElement('div'))
+      .append([document.createElement('div'), document.createElement('div')])
     assert.equal(document.body.querySelectorAll('div').length, 4)
   })
 
-  it('should delete all specified elements', function () {
+  it('should append an aph object to the HTMLElements of another aph object', function () {
+    aph('<div>').appendTo(aph(document.body))
+    aph(document.body).append(aph('<div>')).append([aph('<div>'), aph('<div>')])
+    assert.equal(document.body.querySelectorAll('div').length, 8)
+  })
+
+  it('should prepend an aph object to an HTMLElement', function () {
+    aph('<div>').prependTo(document.body)
+    aph(document.body)
+      .prepend(document.createElement('div'))
+      .prepend([document.createElement('div'), document.createElement('div')])
+    assert.equal(document.body.querySelectorAll('div').length, 12)
+  })
+
+  it('should prepend an aph object to the HTMLElements of another aph object', function () {
+    aph('<div>').prependTo(aph(document.body))
+    aph(document.body)
+      .prepend(aph('<div>'))
+      .prepend([aph('<div>'), aph('<div>')])
+    assert.equal(document.body.querySelectorAll('div').length, 16)
+  })
+
+  it('should delete all div elements', function () {
     aph('div').delete()
     assert.equal(document.body.querySelectorAll('div').length, 0)
+  })
+
+  it('should create a default page like structure with .html()', function () {
+    aph(document.body).prepend(
+      aph('<div>')
+        .addClass('page-content')
+        .append([
+          document.createElement('header'),
+          document.createElement('aside'),
+          aph('<main>').append(
+            aph('<div>').addClass('main-content')
+          ),
+          aph('<footer>'),
+        ])
+    )
+
+    assert.equal(aph('.page-content').length, 1)
+    assert.equal(aph('.page-content header').length, 1)
+    assert.equal(aph('.page-content aside').length, 1)
+    assert.equal(aph('.page-content main').length, 1)
+    assert.equal(aph('.page-content main .main-content').length, 1)
+    assert.equal(aph('.page-content footer').length, 1)
+    aph('.page-content').delete()
   })
 })
 
