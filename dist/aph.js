@@ -5,7 +5,71 @@
 }(this, (function () { 'use strict';
 
 var arrProto = Array.prototype;
-var isStr = function (maybeStr) { return '' + maybeStr === maybeStr; };
+
+// Check if what's passed is a string
+function isStr (maybeStr) {
+  return '' + maybeStr === maybeStr
+}
+
+// If what's passed is a apheleia object, return its first element.
+// If not, return the argument itself
+function parseElementArg (elemOrAph) {
+  return Apheleia.prototype.isPrototypeOf(elemOrAph) ? elemOrAph[0] : elemOrAph
+}
+
+// Parses the passed context
+function aphParseContext (elemOrAphOrStr) {
+  return elemOrAphOrStr instanceof Element
+    ? elemOrAphOrStr // If already a html element
+    : Apheleia.prototype.isPrototypeOf(elemOrAphOrStr)
+        ? elemOrAphOrStr[0] // If already an apheleia object
+        : isStr(elemOrAphOrStr)
+            ? document.querySelector(elemOrAphOrStr) // If string passed let's search for the element on the DOM
+            : document // Return the document.
+}
+
+// Parses the elements passed to aph()
+function aphParseElements (strOrArrayOrAphOrElem, ctx) {
+  // If string passed
+  if (isStr(strOrArrayOrAphOrElem)) {
+    var isCreationStr = /<(\w*)\/?>/.exec(strOrArrayOrAphOrElem);
+    // If creation string, create the element
+    if (isCreationStr) {
+      return [document.createElement(isCreationStr[1])]
+    }
+    // If not a creation string, let's search for the elements
+    return /^#[\w-]*$/.test(strOrArrayOrAphOrElem) // if #id
+      ? [window[strOrArrayOrAphOrElem.slice(1)]]
+      : arrProto.slice.call(
+          /^\.[\w-]*$/.test(strOrArrayOrAphOrElem) // if .class
+            ? ctx.getElementsByClassName(strOrArrayOrAphOrElem.slice(1))
+            : /^\w+$/.test(strOrArrayOrAphOrElem) // if tag (a, span, div, ...)
+                ? ctx.getElementsByTagName(strOrArrayOrAphOrElem)
+                : ctx.querySelectorAll(strOrArrayOrAphOrElem) // anything else
+        )
+  }
+
+  // If html element passed
+  if (strOrArrayOrAphOrElem instanceof Element) {
+    return [strOrArrayOrAphOrElem]
+  }
+
+  // If node list passed
+  // If another apheleia object is passed, get its elements
+  if (
+    NodeList.prototype.isPrototypeOf(strOrArrayOrAphOrElem) ||
+    Apheleia.prototype.isPrototypeOf(strOrArrayOrAphOrElem)
+  ) {
+    return arrProto.slice.call(strOrArrayOrAphOrElem)
+  }
+
+  // If array passed, just return
+  if (Array.isArray(strOrArrayOrAphOrElem)) {
+    return strOrArrayOrAphOrElem
+  }
+
+  return []
+}
 
 var Apheleia = function Apheleia (elems, context, aphParentInstance) {
   this.aphParent = aphParentInstance;
@@ -18,6 +82,14 @@ var Apheleia = function Apheleia (elems, context, aphParentInstance) {
     len--; // Ends loop when reaches 0
     this[len] = list[len] // Builds the array-like structure
   ){  }
+};
+
+// Iterates through the elements with a 'callback(element, index)''
+Apheleia.prototype.each = function each (cb) {
+  // Iterates through the Apheleia object.
+  // If the callback returns false, the iteration stops.
+  for (var i = 0; i < this.length && cb.call(this, this[i], i++) !== false;){  }
+  return this
 };
 
 // Returns a new Apheleia instance with the filtered elements
@@ -33,14 +105,6 @@ Apheleia.prototype.find = function find (selector) {
 // Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
   return +index === index ? this[index] : arrProto.slice.call(this)
-};
-
-// Iterates through the elements with a 'callback(element, index)''
-Apheleia.prototype.each = function each (cb) {
-  // Iterates through the Apheleia object.
-  // If the callback returns false, the iteration stops.
-  for (var i = 0; i < this.length && cb.call(this, this[i], i++) !== false;){  }
-  return this
 };
 
 // Node Data manipulation Methods
@@ -101,10 +165,11 @@ Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
 };
 
 Apheleia.prototype.appendTo = function appendTo (newParent) {
-  return this.each(function (elem) { return newParent.appendChild(elem); })
+  return this.each(function (elem) { return parseElementArg(newParent).appendChild(elem); })
 };
 
 Apheleia.prototype.prependTo = function prependTo (newParent) {
+  newParent = parseElementArg(newParent);
   return this.each(function (elem) { return newParent.insertBefore(elem, newParent.firstChild); })
 };
 
@@ -163,59 +228,6 @@ Apheleia.prototype.once = function once (events, cb) {
     cb.call(this, e);
     self.off(e.type, onceFn);
   })
-};
-
-// Parses the passed context
-var aphParseContext = function (elemOrAphOrStr) {
-  return elemOrAphOrStr instanceof Element
-    ? elemOrAphOrStr // If already a html element
-    : Apheleia.prototype.isPrototypeOf(elemOrAphOrStr)
-        ? elemOrAphOrStr[0] // If already apheleia object
-        : isStr(elemOrAphOrStr)
-            ? document.querySelector(elemOrAphOrStr) // If string passed let's search for the element on the DOM
-            : document // Return the document.
-};
-
-// Parses the elements passed to aph()
-var aphParseElements = function (stringOrListOrNode, ctx) {
-  // If string passed
-  if (isStr(stringOrListOrNode)) {
-    var isCreationStr = /<(\w*)\/?>/.exec(stringOrListOrNode);
-    // If creation string, create the element
-    if (isCreationStr) {
-      return [document.createElement(isCreationStr[1])]
-    }
-    // If not a creation string, let's search for the elements
-    return /^#[\w-]*$/.test(stringOrListOrNode) // if #id
-      ? [window[stringOrListOrNode.slice(1)]]
-      : arrProto.slice.call(
-          /^\.[\w-]*$/.test(stringOrListOrNode) // if .class
-            ? ctx.getElementsByClassName(stringOrListOrNode.slice(1))
-            : /^\w+$/.test(stringOrListOrNode) // if singlet (a, span, div, ...)
-                ? ctx.getElementsByTagName(stringOrListOrNode)
-                : ctx.querySelectorAll(stringOrListOrNode) // anything else
-        )
-  }
-  // If html element passed
-  if (stringOrListOrNode instanceof Element) {
-    return [stringOrListOrNode]
-  }
-
-  // If node list passed
-  // If another apheleia object is passed, get its elements
-  if (
-    NodeList.prototype.isPrototypeOf(stringOrListOrNode) ||
-    Apheleia.prototype.isPrototypeOf(stringOrListOrNode)
-  ) {
-    return arrProto.slice.call(stringOrListOrNode)
-  }
-
-  // If array passed, just return
-  if (Array.isArray(stringOrListOrNode)) {
-    return stringOrListOrNode
-  }
-
-  return []
 };
 
 // Apheleia wrapper

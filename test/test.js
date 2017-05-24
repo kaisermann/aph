@@ -1,60 +1,82 @@
 /* global describe, it */
 require('jsdom-global')()
-const assert = require('chai').assert
+const { assert } = require('chai')
 const aph = require('../dist/aph')
 
-let element // eslint-disable-line
-let element2 // eslint-disable-line
+let aElement = aph('<div>')
+let aElement2 = aph('<div>')
 
-describe('Apheleia plugins', function () {
-  it('should expose aph.fn', function () {
-    assert.isNotNull(aph.fn)
+describe('Creating and deleting items', function () {
+  it('should create an element when a string between <str> is passed', function () {
+    assert.equal(aph('<img>')[0].tagName, 'IMG')
+    assert.equal(aph('<div/>')[0].tagName, 'DIV')
   })
 
-  it('should create a .log() plugin that logs all the instance loaded elements', function () {
-    aph.plug('log', function () {
-      this.each(item => console.log(item))
-    })
-    assert.isFunction(aph().log)
+  it('should append an element to a specified parent node', function () {
+    aph('<div>').appendTo(document.body)
+    assert.equal(document.body.querySelectorAll('div').length, 1)
+  })
+
+  it('should append an element to the first element of another Apheleia instance', function () {
+    aph('<div>').appendTo(aph(document.body))
+    assert.equal(document.body.querySelectorAll('div').length, 2)
+  })
+
+  it('should prepend an element to a specified parent node', function () {
+    aph('<div>').prependTo(document.body)
+    assert.equal(document.body.querySelectorAll('div').length, 3)
+  })
+
+  it('should prepend an element to the first element of another Apheleia instance', function () {
+    aph('<div>').prependTo(aph(document.body))
+    assert.equal(document.body.querySelectorAll('div').length, 4)
+  })
+
+  it('should delete all specified elements', function () {
+    aph('div').delete()
+    assert.equal(document.body.querySelectorAll('div').length, 0)
   })
 })
 
-describe('Creating and selecting items', function () {
-  it('should create an element when a string between <str> is passed', function () {
-    element = aph('<div>').appendTo(document.body)[0]
-    element2 = aph('<div>').appendTo(document.body)[0]
-    assert.equal(element.tagName.toLowerCase(), 'div')
-    assert.equal(aph('<img>')[0].tagName.toLowerCase(), 'img')
-    assert.equal(aph('<div/>')[0].tagName.toLowerCase(), 'div')
+describe('Selecting items', function () {
+  it('should select existent elements by specified selector', function () {
+    aElement.appendTo(document.body)
+    aElement2.appendTo(document.body)
+    assert.equal(aph('div').length, 2)
   })
 
   it('should create an Apheleia wrapper around a passed node', function () {
-    assert.equal(aph(element).length, 1)
+    assert.equal(aph(aElement).length, 1)
   })
 
   it('should find children itens of the first element with .find()', function () {
-    aph('<span>').appendTo(element2)
-    assert.equal(aph(element2).find('span')[0].tagName.toLowerCase(), 'span')
+    aph('<span>').appendTo(aElement2)
+    assert.equal(aph(aElement2).find('span')[0].tagName, 'SPAN')
+  })
+
+  it('should filter all elements and return only spans', function () {
+    const aFilteredSpans = aph('*').filter(elem => elem.tagName === 'SPAN')
+    assert.equal(aFilteredSpans[0].tagName, 'SPAN')
   })
 
   it('should find when passed an #id selector', function () {
-    aph(element).attr('id', 'test-id')
-    assert.equal(aph('#test-id')[0].tagName.toLowerCase(), 'div')
+    aph(aElement).attr('id', 'test-id')
+    assert.equal(aph('#test-id')[0].tagName, 'DIV')
   })
 
   it('should find when passed an .class selector', function () {
-    aph(element).attr('class', 'test-class')
-    assert.equal(aph('.test-class')[0].tagName.toLowerCase(), 'div')
+    aph(aElement).attr('class', 'test-class')
+    assert.equal(aph('.test-class')[0].tagName, 'DIV')
   })
 
   it('should find when passed an singlet selector', function () {
-    aph(element).attr('class', 'test-class')
-    assert.equal(aph('div')[0].tagName.toLowerCase(), 'div')
+    aph(aElement).attr('class', 'test-class')
+    assert.equal(aph('div')[0].tagName, 'DIV')
   })
 
   it('should find when passed another Apheleia instance', function () {
-    aph(element).attr('class', 'test-class')
-    assert.equal(aph(aph('div'))[0].tagName.toLowerCase(), 'div')
+    aph(aElement).attr('class', 'test-class')
+    assert.equal(aph(aph('div'))[0].tagName, 'DIV')
   })
 
   it('should return all elements when .get() with no parameter', function () {
@@ -85,41 +107,20 @@ describe('Creating and selecting items', function () {
   // TO-DO: need to create context test cases
 })
 
-describe('DOM Manipulation', function () {
-  it('should append an element to a specified parent node', function () {
-    aph('<div>').appendTo(document.body)
-    assert.equal(document.body.querySelectorAll('div').length, 3)
-  })
-
-  it('should prepend an element to a specified parent node', function () {
-    aph('<div>').prependTo(document.body)
-    assert.equal(document.body.querySelectorAll('div').length, 4)
-  })
-
-  it('should select existent elements by specified selector', function () {
-    assert.equal(aph('div').length, 4)
-  })
-
-  it('should delete all specified elements', function () {
-    aph('div').delete()
-    assert.equal(document.body.querySelectorAll('div').length, 0)
-  })
-})
-
 describe('Element manipulation', function () {
   it('should accept an object as attributes setup', function () {
-    aph(element).attr({ style: 'width: 400px' })
-    assert.equal(element.style.width, '400px')
+    aph(aElement).attr({ style: 'width: 400px' })
+    assert.equal(aElement[0].style.width, '400px')
   })
 
   it('should accept an object as data setup', function () {
-    aph(element).data({ slug: 'test-slug-2' })
-    assert.equal(element.getAttribute('data-slug'), 'test-slug-2')
+    aph(aElement).data({ slug: 'test-slug-2' })
+    assert.equal(aElement[0].getAttribute('data-slug'), 'test-slug-2')
   })
 
   it('should accept an object as properties setup', function () {
-    aph(element).prop({ testProperty: 11 })
-    assert.equal(element.testProperty, 11)
+    aph(aElement).prop({ testProperty: 11 })
+    assert.equal(aElement[0].testProperty, 11)
   })
 })
 
@@ -143,18 +144,27 @@ describe('Class manipulation', function () {
 
 describe('CSS manipulation', function () {
   it('should set single css attribute', function () {
-    aph(element).css('opacity', 0.5)
-    assert.equal(aph(element)[0].style.opacity, 0.5)
+    aph(aElement).css('opacity', 0.5)
+    assert.equal(aph(aElement)[0].style.opacity, 0.5)
   })
 
   it('should set multiple css attribute', function () {
-    aph(element).css({ display: 'inline', width: '500px' })
-    assert.equal(aph(element)[0].style.width, '500px')
-    assert.equal(aph(element)[0].style.display, 'inline')
+    aph(aElement).css({ display: 'inline', width: '500px' })
+    assert.equal(aph(aElement)[0].style.width, '500px')
+    assert.equal(aph(aElement)[0].style.display, 'inline')
   })
 
   it('should get single css attribute from first element', function () {
-    assert.equal(aph(element).css('opacity'), 0.5)
+    assert.equal(aph(aElement).css('opacity'), 0.5)
+  })
+})
+
+describe('Apheleia plugins', function () {
+  it('should create a .log() plugin that logs all the instance loaded elements', function () {
+    aph.plug('log', function () {
+      this.each(item => console.log(item))
+    })
+    assert.isFunction(aph().log)
   })
 })
 
