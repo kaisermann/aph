@@ -137,7 +137,13 @@ Apheleia.prototype.prependTo = function prependTo (newParent) {
 // Sets or gets the html
 Apheleia.prototype.html = function html (futureHTML, cb) {
   if (futureHTML === undefined) { return this[0].innerHTML }
-  if (!Array.isArray(futureHTML)) { futureHTML = [futureHTML]; }
+
+  // If an aph obj was passed, let's get its elements
+  if (Apheleia.prototype.isPrototypeOf(futureHTML)) {
+    futureHTML = futureHTML.get();
+  } else if (!Array.isArray(futureHTML)) {
+    futureHTML = [futureHTML];
+  }
 
   // If a callback is received as the second argument
   // let's pass the parent and child nodes
