@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kaisermann/aph.svg?branch=master)](https://travis-ci.org/kaisermann/aph)
+
 # Aph
 
 A very lightweight (**989 bytes** minified and gzipped), simple and easy-to-use DOM manipulation library.
