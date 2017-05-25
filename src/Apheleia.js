@@ -129,15 +129,17 @@ class Apheleia {
   html (futureHTML, cb) {
     if (futureHTML === undefined) return this[0].innerHTML
 
-    // If an aph obj was passed, let's get its elements
+    // Manipulating arrays is easier
     if (!Array.isArray(futureHTML)) {
       futureHTML = [futureHTML]
     }
 
     // If we receive any apheleia objects, we must get its elements
     futureHTML = futureHTML.reduce((acc, item) => {
-      if (Apheleia.prototype.isPrototypeOf(item)) {
-        return acc.concat(item.get())
+      // If a .length is found, we assume it's a standard indexed collection
+      // We check for a [0] index to
+      if (item.length) {
+        return acc.concat(arrProto.slice.call(item))
       }
       acc.push(item)
       return acc
