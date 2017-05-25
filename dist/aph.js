@@ -11,12 +11,6 @@ function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
 
-// If what's passed is a apheleia object, return its first element.
-// If not, return the argument itself
-function parseElementArg (elemOrAph) {
-  return Apheleia.prototype.isPrototypeOf(elemOrAph) ? elemOrAph[0] : elemOrAph
-}
-
 // Parses the passed context
 function aphParseContext (elemOrAphOrStr) {
   return elemOrAphOrStr instanceof Element
@@ -114,8 +108,9 @@ Apheleia.prototype.get = function get (index) {
 
 // Appends the passed html/aph
 Apheleia.prototype.append = function append (futureContent) {
-  return this.html(futureContent, function (parent, child) { return parent.appendChild(child); }
-  )
+  return this.html(futureContent, function (parent, child) {
+    parent.appendChild(child);
+  })
 };
 
 Apheleia.prototype.appendTo = function appendTo (newParent) {
@@ -125,8 +120,9 @@ Apheleia.prototype.appendTo = function appendTo (newParent) {
 
 // Prepends the passed html/aph
 Apheleia.prototype.prepend = function prepend (futureContent) {
-  return this.html(futureContent, function (parent, child) { return parent.insertBefore(child, parent.firstChild); }
-  )
+  return this.html(futureContent, function (parent, child) {
+    parent.insertBefore(child, parent.firstChild);
+  })
 };
 
 Apheleia.prototype.prependTo = function prependTo (newParent) {
@@ -139,18 +135,24 @@ Apheleia.prototype.html = function html (futureHTML, cb) {
   if (futureHTML === undefined) { return this[0].innerHTML }
 
   // If an aph obj was passed, let's get its elements
-  if (Apheleia.prototype.isPrototypeOf(futureHTML)) {
-    futureHTML = futureHTML.get();
-  } else if (!Array.isArray(futureHTML)) {
+  if (!Array.isArray(futureHTML)) {
     futureHTML = [futureHTML];
   }
+
+  // If we receive any apheleia objects, we must get its elements
+  futureHTML = futureHTML.reduce(function (acc, item) {
+    if (Apheleia.prototype.isPrototypeOf(item)) {
+      return acc.concat(item.get())
+    }
+    acc.push(item);
+    return acc
+  }, []);
 
   // If a callback is received as the second argument
   // let's pass the parent and child nodes
   // and let the callback do all the work
   if (typeof cb === 'function') {
-    return this.each(function (futureParent) { return futureHTML.forEach(function (futureChild) { return cb(futureParent, parseElementArg(futureChild)); }
-      ); }
+    return this.each(function (futureParent) { return futureHTML.forEach(function (futureChild) { return cb(futureParent, futureChild); }); }
     )
   }
 
@@ -158,9 +160,7 @@ Apheleia.prototype.html = function html (futureHTML, cb) {
   // we must rewrite all of a parents HTML
   return this.each(function (futureParent) {
     futureParent.innerHTML = '';
-    futureHTML.forEach(
-      function (futureChild) { return (futureParent.innerHTML += parseElementArg(futureChild)); }
-    );
+    futureHTML.forEach(function (futureChild) { return (futureParent.innerHTML += futureChild); });
   })
 };
 

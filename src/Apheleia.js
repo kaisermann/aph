@@ -5,12 +5,6 @@ function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
 
-// If what's passed is a apheleia object, return its first element.
-// If not, return the argument itself
-function parseElementArg (elemOrAph) {
-  return Apheleia.prototype.isPrototypeOf(elemOrAph) ? elemOrAph[0] : elemOrAph
-}
-
 // Parses the passed context
 function aphParseContext (elemOrAphOrStr) {
   return elemOrAphOrStr instanceof Element
@@ -109,9 +103,9 @@ class Apheleia {
 
   // Appends the passed html/aph
   append (futureContent) {
-    return this.html(futureContent, (parent, child) =>
+    return this.html(futureContent, function (parent, child) {
       parent.appendChild(child)
-    )
+    })
   }
 
   appendTo (newParent) {
@@ -121,9 +115,9 @@ class Apheleia {
 
   // Prepends the passed html/aph
   prepend (futureContent) {
-    return this.html(futureContent, (parent, child) =>
+    return this.html(futureContent, function (parent, child) {
       parent.insertBefore(child, parent.firstChild)
-    )
+    })
   }
 
   prependTo (newParent) {
@@ -136,20 +130,25 @@ class Apheleia {
     if (futureHTML === undefined) return this[0].innerHTML
 
     // If an aph obj was passed, let's get its elements
-    if (Apheleia.prototype.isPrototypeOf(futureHTML)) {
-      futureHTML = futureHTML.get()
-    } else if (!Array.isArray(futureHTML)) {
+    if (!Array.isArray(futureHTML)) {
       futureHTML = [futureHTML]
     }
+
+    // If we receive any apheleia objects, we must get its elements
+    futureHTML = futureHTML.reduce((acc, item) => {
+      if (Apheleia.prototype.isPrototypeOf(item)) {
+        return acc.concat(item.get())
+      }
+      acc.push(item)
+      return acc
+    }, [])
 
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
     if (typeof cb === 'function') {
       return this.each(futureParent =>
-        futureHTML.forEach(futureChild =>
-          cb(futureParent, parseElementArg(futureChild))
-        )
+        futureHTML.forEach(futureChild => cb(futureParent, futureChild))
       )
     }
 
@@ -157,9 +156,7 @@ class Apheleia {
     // we must rewrite all of a parents HTML
     return this.each(futureParent => {
       futureParent.innerHTML = ''
-      futureHTML.forEach(
-        futureChild => (futureParent.innerHTML += parseElementArg(futureChild))
-      )
+      futureHTML.forEach(futureChild => (futureParent.innerHTML += futureChild))
     })
   }
 
