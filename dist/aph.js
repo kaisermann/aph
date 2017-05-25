@@ -280,8 +280,9 @@ Apheleia.prototype.once = function once (events, cb) {
   })
 };
 
-function aph (elems, context) {
-  return new Apheleia(elems, context)
+// Apheleia wrapper
+function aph (elems, context, aphParent) {
+  return new Apheleia(elems, context, aphParent)
 }
 
 // Plugs in new methods to the Apheleia prototype

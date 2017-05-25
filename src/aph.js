@@ -1,8 +1,8 @@
 import Apheleia from './Apheleia'
 
 // Apheleia wrapper
-function aph (elems, context) {
-  return new Apheleia(elems, context)
+function aph (elems, context, aphParent) {
+  return new Apheleia(elems, context, aphParent)
 }
 
 // Plugs in new methods to the Apheleia prototype

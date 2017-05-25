@@ -11,6 +11,7 @@
 <body>
 
 	<script type="text/javascript" src="./dist/aph.js"></script>
+	<script type="text/javascript" src="./plugins.js"></script>
 	<script>
 		// console.log = function(...args) {
 		// 	args.forEach(arg => document.body.innerHTML += arg + '<br>')
@@ -33,12 +34,13 @@
 					]
 				)
 			)
-		console.log(aph(document.body).html())
-		console.log(aph(document.body).prop('textContent'))
 	</script>
 	
 	<a href="#1"></a>
 	<a href="#2"></a>
+	<script>
+		aph('a').repeat(4).log()
+	</script>
 </body>
 
 </html>
