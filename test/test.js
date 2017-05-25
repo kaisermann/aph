@@ -6,6 +6,17 @@ const aph = require('../dist/aph')
 let aElement = aph('<div>')
 let aElement2 = aph('<div>')
 
+aph.plug('repeat', function (numberOfClones) {
+  let repeatedElements = []
+  let cachedElements = this.get()
+  for (let i = numberOfClones; i--;) {
+    repeatedElements = repeatedElements.concat(
+      cachedElements.map(item => item.cloneNode())
+    )
+  }
+  return aph(repeatedElements, this.meta.context, this)
+})
+
 describe('Creating and deleting items', function () {
   it('should create an element when a string between <str> is passed', function () {
     assert.equal(aph('<img>')[0].tagName, 'IMG')
@@ -54,9 +65,7 @@ describe('Creating and deleting items', function () {
         .append([
           document.createElement('header'),
           document.createElement('aside'),
-          aph('<main>').append(
-            aph('<div>').addClass('main-content')
-          ),
+          aph('<main>').append(aph('<div>').addClass('main-content')),
           aph('<footer>'),
         ])
     )
@@ -116,22 +125,22 @@ describe('Selecting items', function () {
     assert.equal(aph('*').get().length, 7)
   })
 
-  it("should return null when the apheleia has no '.aphParent' property", function () {
+  it("should return null when the apheleia has no 'meta.parent' property", function () {
     const aInstance = aph('*')
-    assert.equal(aInstance.aphParent, null)
+    assert.equal(aInstance.meta.parent, null)
   })
 
-  it("should return the parent Apheleia instance when '.aphParent' is not null", function () {
+  it("should return the parent Apheleia instance when 'meta.parent' is not null", function () {
     const aInstance = aph('*')
     const aNotherInstance = aInstance.find('div')
-    assert.equal(aNotherInstance.aphParent, aInstance)
+    assert.equal(aNotherInstance.meta.parent, aInstance)
   })
 
   it('should search for a context element when string passed as parameter', function () {
     const aInstance = aph('.test-class')
     aph('<span>').addClass('inside-class').appendTo(aInstance[0])
     assert.isTrue(
-      aph('.inside-class', '.test-class').context.classList.contains(
+      aph('.inside-class', '.test-class').meta.context.classList.contains(
         'test-class'
       )
     )

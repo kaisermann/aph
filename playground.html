@@ -16,30 +16,31 @@
 		// console.log = function(...args) {
 		// 	args.forEach(arg => document.body.innerHTML += arg + '<br>')
 		// }
-
-		aph(document.body)
-			.prepend(
-				aph('<div>')
-				.addClass('page-content')
-				.append(
-					[
-						document.createElement('header'),
-						document.createElement('aside'),
-						aph('<main>').append(
-							aph('<div>')
-							.addClass('main-content')
-							.prop('textContent', 'Hello wooooorld!')
-						),
-						aph('<footer>')
-					]
-				)
-			)
+		//
+		// aph(document.body)
+		// 	.html(
+		// 		aph('<div>')
+		// 		.addClass('page-content')
+		// 		.append(
+		// 			[
+		// 				document.createElement('header'),
+		// 				document.createElement('aside'),
+		// 				aph('<main>').append(
+		// 					aph('<div>')
+		// 					.addClass('main-content')
+		// 					.prop('textContent', 'Hello wooooorld!')
+		// 				),
+		// 				aph('<footer>')
+		// 			]
+		// 		)
+		// 	)
+			aph('body').html(['<h1>OIE</h1>','<h2>OPAAAA</h2>'])
 	</script>
 	
 	<a href="#1"></a>
 	<a href="#2"></a>
 	<script>
-		aph('a').repeat(4).log()
+		aph('a').repeat(1).log()
 	</script>
 </body>
 

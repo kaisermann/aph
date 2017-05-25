@@ -60,12 +60,12 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
 }
 
 class Apheleia {
-  constructor (elems, context, aphParentInstance) {
-    this.aphParent = aphParentInstance
+  constructor (elems, context, metaObj) {
+    this.meta = metaObj || {}
     for (
       let list = aphParseElements(
         elems,
-        (this.context = aphParseContext(context)) // Sets current context
+        (this.meta.context = aphParseContext(context)) // Sets current context
       ),
         len = (this.length = list.length); // Sets current length
       len--; // Ends loop when reaches 0
@@ -83,17 +83,25 @@ class Apheleia {
 
   // Returns a new Apheleia instance with the filtered elements
   filter (cb) {
-    return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
+    return new Apheleia(arrProto.filter.call(this, cb), this.meta.context, {
+      parent: this,
+    })
   }
 
   // Returns a new Apheleia instance with a portion of the original collection
   slice (min, max) {
-    return new Apheleia(arrProto.slice.call(this, min, max), this.context, this)
+    return new Apheleia(
+      arrProto.slice.call(this, min, max),
+      this.meta.context,
+      {
+        parent: this,
+      }
+    )
   }
 
   // Creates a new Apheleia instance with the elements found.
   find (selector) {
-    return new Apheleia(selector, this[0], this)
+    return new Apheleia(selector, this[0], { parent: this })
   }
 
   // Gets the specified element or the whole array if no index was defined
@@ -126,19 +134,24 @@ class Apheleia {
   }
 
   // Sets or gets the html
-  html (futureHTML, cb) {
-    if (futureHTML === undefined) return this[0].innerHTML
-
-    // Manipulating arrays is easier
-    if (!Array.isArray(futureHTML)) {
-      futureHTML = [futureHTML]
+  html (futureChildren, cb) {
+    // If there're no arguments
+    // Let's return the html of the first element
+    if (futureChildren === undefined) {
+      return this[0].innerHTML
     }
 
-    // If we receive any apheleia objects, we must get its elements
-    futureHTML = futureHTML.reduce((acc, item) => {
-      // If a .length is found, we assume it's a standard indexed collection
-      // We check for a [0] index to
-      if (item.length) {
+    // Manipulating arrays is easier
+    if (!Array.isArray(futureChildren)) {
+      futureChildren = [futureChildren]
+    }
+
+    // If we receive any collections (arrays, lists, aph),
+    // we must get its elements
+    futureChildren = futureChildren.reduce((acc, item) => {
+      // If a .length is found and it's not a string,
+      // we assume it's a standard indexed collection
+      if (!isStr(item) && item.length) {
         return acc.concat(arrProto.slice.call(item))
       }
       acc.push(item)
@@ -150,15 +163,19 @@ class Apheleia {
     // and let the callback do all the work
     if (typeof cb === 'function') {
       return this.each(futureParent =>
-        futureHTML.forEach(futureChild => cb(futureParent, futureChild))
+        futureChildren.forEach(futureChild => cb(futureParent, futureChild))
       )
     }
 
     // If the second argument is not a valid callback,
-    // we must rewrite all of a parents HTML
+    // we will rewrite all parents HTML
     return this.each(futureParent => {
       futureParent.innerHTML = ''
-      futureHTML.forEach(futureChild => (futureParent.innerHTML += futureChild))
+      futureChildren.forEach(futureChild => {
+        futureParent.innerHTML += isStr(futureChild)
+          ? futureChild
+          : futureChild.outerHTML
+      })
     })
   }
 

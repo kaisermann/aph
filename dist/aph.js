@@ -65,12 +65,12 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
   return []
 }
 
-var Apheleia = function Apheleia (elems, context, aphParentInstance) {
-  this.aphParent = aphParentInstance;
+var Apheleia = function Apheleia (elems, context, metaObj) {
+  this.meta = metaObj || {};
   for (
     var list = aphParseElements(
       elems,
-      (this.context = aphParseContext(context)) // Sets current context
+      (this.meta.context = aphParseContext(context)) // Sets current context
     ),
       len = (this.length = list.length); // Sets current length
     len--; // Ends loop when reaches 0
@@ -88,17 +88,25 @@ Apheleia.prototype.each = function each (cb) {
 
 // Returns a new Apheleia instance with the filtered elements
 Apheleia.prototype.filter = function filter (cb) {
-  return new Apheleia(arrProto.filter.call(this, cb), this.context, this)
+  return new Apheleia(arrProto.filter.call(this, cb), this.meta.context, {
+    parent: this,
+  })
 };
 
 // Returns a new Apheleia instance with a portion of the original collection
 Apheleia.prototype.slice = function slice (min, max) {
-  return new Apheleia(arrProto.slice.call(this, min, max), this.context, this)
+  return new Apheleia(
+    arrProto.slice.call(this, min, max),
+    this.meta.context,
+    {
+      parent: this,
+    }
+  )
 };
 
 // Creates a new Apheleia instance with the elements found.
 Apheleia.prototype.find = function find (selector) {
-  return new Apheleia(selector, this[0], this)
+  return new Apheleia(selector, this[0], { parent: this })
 };
 
 // Gets the specified element or the whole array if no index was defined
@@ -131,19 +139,24 @@ Apheleia.prototype.prependTo = function prependTo (newParent) {
 };
 
 // Sets or gets the html
-Apheleia.prototype.html = function html (futureHTML, cb) {
-  if (futureHTML === undefined) { return this[0].innerHTML }
-
-  // Manipulating arrays is easier
-  if (!Array.isArray(futureHTML)) {
-    futureHTML = [futureHTML];
+Apheleia.prototype.html = function html (futureChildren, cb) {
+  // If there're no arguments
+  // Let's return the html of the first element
+  if (futureChildren === undefined) {
+    return this[0].innerHTML
   }
 
-  // If we receive any apheleia objects, we must get its elements
-  futureHTML = futureHTML.reduce(function (acc, item) {
-    // If a .length is found, we assume it's a standard indexed collection
-    // We check for a [0] index to
-    if (item.length) {
+  // Manipulating arrays is easier
+  if (!Array.isArray(futureChildren)) {
+    futureChildren = [futureChildren];
+  }
+
+  // If we receive any collections (arrays, lists, aph),
+  // we must get its elements
+  futureChildren = futureChildren.reduce(function (acc, item) {
+    // If a .length is found and it's not a string,
+    // we assume it's a standard indexed collection
+    if (!isStr(item) && item.length) {
       return acc.concat(arrProto.slice.call(item))
     }
     acc.push(item);
@@ -154,15 +167,19 @@ Apheleia.prototype.html = function html (futureHTML, cb) {
   // let's pass the parent and child nodes
   // and let the callback do all the work
   if (typeof cb === 'function') {
-    return this.each(function (futureParent) { return futureHTML.forEach(function (futureChild) { return cb(futureParent, futureChild); }); }
+    return this.each(function (futureParent) { return futureChildren.forEach(function (futureChild) { return cb(futureParent, futureChild); }); }
     )
   }
 
   // If the second argument is not a valid callback,
-  // we must rewrite all of a parents HTML
+  // we will rewrite all parents HTML
   return this.each(function (futureParent) {
     futureParent.innerHTML = '';
-    futureHTML.forEach(function (futureChild) { return (futureParent.innerHTML += futureChild); });
+    futureChildren.forEach(function (futureChild) {
+      futureParent.innerHTML += isStr(futureChild)
+        ? futureChild
+        : futureChild.outerHTML;
+    });
   })
 };
 
@@ -280,9 +297,8 @@ Apheleia.prototype.once = function once (events, cb) {
   })
 };
 
-// Apheleia wrapper
-function aph (elems, context, aphParent) {
-  return new Apheleia(elems, context, aphParent)
+function aph (elems, context, metaObj) {
+  return new Apheleia(elems, context, metaObj)
 }
 
 // Plugs in new methods to the Apheleia prototype
