@@ -37,23 +37,25 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
         )
   }
 
-  // If html element passed
-  if (strOrArrayOrAphOrElem instanceof Element) {
-    return [strOrArrayOrAphOrElem]
-  }
-
-  // If node list passed
-  // If another apheleia object is passed, get its elements
+  // If html element / window / document passed
   if (
-    NodeList.prototype.isPrototypeOf(strOrArrayOrAphOrElem) ||
-    Apheleia.prototype.isPrototypeOf(strOrArrayOrAphOrElem)
+    strOrArrayOrAphOrElem instanceof Element ||
+    strOrArrayOrAphOrElem === window ||
+    strOrArrayOrAphOrElem === document
   ) {
-    return arrProto.slice.call(strOrArrayOrAphOrElem)
+    return [strOrArrayOrAphOrElem]
   }
 
   // If array passed, just return
   if (Array.isArray(strOrArrayOrAphOrElem)) {
     return strOrArrayOrAphOrElem
+  }
+
+  // If collection passed and
+  // is not a string (first if, up there) and
+  // is not an array
+  if (strOrArrayOrAphOrElem && strOrArrayOrAphOrElem.length) {
+    return arrProto.slice.call(strOrArrayOrAphOrElem)
   }
 
   return []
