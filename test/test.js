@@ -87,6 +87,10 @@ describe('Selecting items', function () {
     assert.equal(aph('div').length, 2)
   })
 
+  it('should search for the context when string passed', function () {
+    assert.equal(aph('div', 'body').length, 2)
+  })
+
   it('should create an Apheleia wrapper around a passed node', function () {
     assert.equal(aph(aElement).length, 1)
   })

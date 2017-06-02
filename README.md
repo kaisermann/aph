@@ -2,7 +2,7 @@
 
 ## Aph
 
-A very lightweight (**1173 bytes** minified and gzipped), simple and easy-to-use DOM manipulation library.
+A very lightweight (**1168 bytes** minified and gzipped), simple and easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 

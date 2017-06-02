@@ -5,14 +5,27 @@ function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
 
+// Queries a selector (smartly)
+function smartQuerySelectorAll (selector, context) {
+  return /^#[\w-]*$/.test(selector) // if #id
+    ? [window[selector.slice(1)]]
+    : arrProto.slice.call(
+        /^\.[\w-]*$/.test(selector) // if .class
+          ? context.getElementsByClassName(selector.slice(1))
+          : /^\w+$/.test(selector) // if tag (a, span, div, ...)
+              ? context.getElementsByTagName(selector)
+              : context.querySelectorAll(selector) // anything else
+      )
+}
+
 // Parses the passed context
 function aphParseContext (elemOrAphOrStr) {
   return elemOrAphOrStr instanceof Element
     ? elemOrAphOrStr // If already a html element
-    : Apheleia.prototype.isPrototypeOf(elemOrAphOrStr)
-        ? elemOrAphOrStr[0] // If already an apheleia object
-        : isStr(elemOrAphOrStr)
-            ? document.querySelector(elemOrAphOrStr) // If string passed let's search for the element on the DOM
+    : isStr(elemOrAphOrStr)
+        ? smartQuerySelectorAll(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
+        : elemOrAphOrStr && elemOrAphOrStr.length
+            ? elemOrAphOrStr[0] // If already an collection
             : document // Return the document.
 }
 
@@ -26,15 +39,7 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
       return [document.createElement(isCreationStr[1])]
     }
     // If not a creation string, let's search for the elements
-    return /^#[\w-]*$/.test(strOrArrayOrAphOrElem) // if #id
-      ? [window[strOrArrayOrAphOrElem.slice(1)]]
-      : arrProto.slice.call(
-          /^\.[\w-]*$/.test(strOrArrayOrAphOrElem) // if .class
-            ? ctx.getElementsByClassName(strOrArrayOrAphOrElem.slice(1))
-            : /^\w+$/.test(strOrArrayOrAphOrElem) // if tag (a, span, div, ...)
-                ? ctx.getElementsByTagName(strOrArrayOrAphOrElem)
-                : ctx.querySelectorAll(strOrArrayOrAphOrElem) // anything else
-        )
+    return smartQuerySelectorAll(strOrArrayOrAphOrElem, ctx)
   }
 
   // If html element / window / document passed
