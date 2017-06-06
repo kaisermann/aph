@@ -53,8 +53,8 @@ describe('Creating and deleting items', function () {
     assert.equal(document.body.querySelectorAll('div').length, 16)
   })
 
-  it('should delete all div elements', function () {
-    aph('div').delete()
+  it('should remove all div elements', function () {
+    aph('div').remove()
     assert.equal(document.body.querySelectorAll('div').length, 0)
   })
 
@@ -76,7 +76,7 @@ describe('Creating and deleting items', function () {
     assert.equal(aph('.page-content main').length, 1)
     assert.equal(aph('.page-content main .main-content').length, 1)
     assert.equal(aph('.page-content footer').length, 1)
-    aph('.page-content').delete()
+    aph('.page-content').remove()
   })
 })
 
@@ -208,7 +208,7 @@ describe('CSS manipulation', function () {
 describe('Apheleia plugins', function () {
   it('should create a .log() plugin that logs all the instance loaded elements', function () {
     aph.plug('log', function () {
-      this.each(item => console.log(item))
+      this.forEach(item => console.log(item))
     })
     assert.isFunction(aph().log)
   })

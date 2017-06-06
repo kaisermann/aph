@@ -1,7 +1,7 @@
 /* global aph */
 
 aph.plug('log', function () {
-  return this.each(item => console.log(item))
+  return this.forEach(item => console.log(item))
 })
 
 aph.plug('repeat', function (numberOfClones) {

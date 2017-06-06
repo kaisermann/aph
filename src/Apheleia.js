@@ -81,29 +81,28 @@ class Apheleia {
   }
 
   // Iterates through the elements with a 'callback(element, index)''
-  each (cb) {
+  forEach (cb) {
     // Iterates through the Apheleia object.
     // If the callback returns false, the iteration stops.
     for (let i = 0; i < this.length && cb.call(this, this[i], i++) !== false;);
     return this
   }
 
-  // Returns a new Apheleia instance with the filtered elements
-  filter (cb) {
-    return new Apheleia(arrProto.filter.call(this, cb), this.meta.context, {
-      parent: this,
-    })
-  }
-
-  // Returns a new Apheleia instance with a portion of the original collection
-  slice (min, max) {
-    return new Apheleia(
-      arrProto.slice.call(this, min, max),
-      this.meta.context,
-      {
-        parent: this,
+  concat () {
+    let sum = this.get()
+    for (let i = 0, l = arguments.length; i < l; i++) {
+      const arg = arguments[0]
+      if (arg instanceof Node) sum.push(arg)
+      else if (arg && !isStr(arg) && arg.length) {
+        for (let j = 0, k = arg.length; j < k; j++) {
+          if (sum.indexOf(arg[j]) < 0) {
+            sum.push(arg[j])
+          }
+        }
       }
-    )
+    }
+
+    return new Apheleia(sum, this.meta.context, { parent: this })
   }
 
   // Creates a new Apheleia instance with the elements found.
@@ -169,14 +168,14 @@ class Apheleia {
     // let's pass the parent and child nodes
     // and let the callback do all the work
     if (typeof cb === 'function') {
-      return this.each(futureParent =>
+      return this.forEach(futureParent =>
         futureChildren.forEach(futureChild => cb(futureParent, futureChild))
       )
     }
 
     // If the second argument is not a valid callback,
     // we will rewrite all parents HTML
-    return this.each(futureParent => {
+    return this.forEach(futureParent => {
       futureParent.innerHTML = ''
       futureChildren.forEach(futureChild => {
         futureParent.innerHTML += isStr(futureChild)
@@ -194,12 +193,12 @@ class Apheleia {
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
         ? this[0].getAttribute(prepend + objOrKey)
-        : this.each(elem =>
+        : this.forEach(elem =>
             elem.setAttribute(prepend + objOrKey, nothingOrValue)
           )
     }
 
-    return this.each(elem => {
+    return this.forEach(elem => {
       for (const key in objOrKey) {
         elem.setAttribute(prepend + key, objOrKey[key])
       }
@@ -215,12 +214,12 @@ class Apheleia {
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
         ? this[0][objOrKey]
-        : this.each(elem => {
+        : this.forEach(elem => {
           elem[objOrKey] = nothingOrValue
         })
     }
 
-    return this.each(elem => {
+    return this.forEach(elem => {
       for (const key in objOrKey) {
         elem[key] = objOrKey[key]
       }
@@ -232,29 +231,29 @@ class Apheleia {
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
         ? window.getComputedStyle(this[0])[objOrKey]
-        : this.each(elem => {
+        : this.forEach(elem => {
           elem.style[objOrKey] = nothingOrValue
         })
     }
 
-    return this.each(elem => {
+    return this.forEach(elem => {
       for (const key in objOrKey) {
         elem.style[key] = objOrKey[key]
       }
     })
   }
 
-  delete () {
-    return this.each(elem => elem.parentNode.removeChild(elem))
+  remove () {
+    return this.forEach(elem => elem.parentNode.removeChild(elem))
   }
 
   // Class methods
   toggleClass (className) {
-    return this.each(elem => elem.classList.toggle(className))
+    return this.forEach(elem => elem.classList.toggle(className))
   }
 
   addClass (stringOrArray) {
-    return this.each(
+    return this.forEach(
       elem =>
         isStr(stringOrArray)
           ? elem.classList.add(stringOrArray)
@@ -263,7 +262,7 @@ class Apheleia {
   }
 
   removeClass (stringOrArray) {
-    return this.each(
+    return this.forEach(
       elem =>
         isStr(stringOrArray)
           ? elem.classList.remove(stringOrArray)
@@ -278,12 +277,12 @@ class Apheleia {
   }
 
   // Wrapper for Node methods
-  exec (fnName, args) {
-    return this.each(elem => elem[fnName].apply(elem, args))
+  call (fnName, args) {
+    return this.forEach(elem => elem[fnName].apply(elem, args))
   }
 
   on (events, cb) {
-    return this.each(elem =>
+    return this.forEach(elem =>
       events
         .split(' ')
         .forEach(eventName => elem.addEventListener(eventName, cb))
@@ -291,7 +290,7 @@ class Apheleia {
   }
 
   off (events, cb) {
-    return this.each(elem =>
+    return this.forEach(elem =>
       events
         .split(' ')
         .forEach(eventName => elem.removeEventListener(eventName, cb))
@@ -306,5 +305,31 @@ class Apheleia {
     })
   }
 }
+
+const newCollectionMethods = ['filter', 'map', 'slice']
+const ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
+  newCollectionMethods
+)
+
+Object.getOwnPropertyNames(arrProto).forEach(key => {
+  if (
+    ignoreMethods.indexOf(key) === -1 &&
+    Apheleia.prototype[key] === undefined
+  ) {
+    Apheleia.prototype[key] = arrProto[key]
+  }
+})
+
+newCollectionMethods.forEach(method => {
+  Apheleia.prototype[method] = function () {
+    return new Apheleia(
+      arrProto[method].apply(this, arguments),
+      this.meta.context,
+      {
+        parent: this,
+      }
+    )
+  }
+})
 
 export default Apheleia

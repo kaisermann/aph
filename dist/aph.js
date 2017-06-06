@@ -86,29 +86,30 @@ var Apheleia = function Apheleia (elems, context, metaObj) {
 };
 
 // Iterates through the elements with a 'callback(element, index)''
-Apheleia.prototype.each = function each (cb) {
+Apheleia.prototype.forEach = function forEach (cb) {
   // Iterates through the Apheleia object.
   // If the callback returns false, the iteration stops.
   for (var i = 0; i < this.length && cb.call(this, this[i], i++) !== false;){  }
   return this
 };
 
-// Returns a new Apheleia instance with the filtered elements
-Apheleia.prototype.filter = function filter (cb) {
-  return new Apheleia(arrProto.filter.call(this, cb), this.meta.context, {
-    parent: this,
-  })
-};
+Apheleia.prototype.concat = function concat () {
+    var arguments$1 = arguments;
 
-// Returns a new Apheleia instance with a portion of the original collection
-Apheleia.prototype.slice = function slice (min, max) {
-  return new Apheleia(
-    arrProto.slice.call(this, min, max),
-    this.meta.context,
-    {
-      parent: this,
+  var sum = this.get();
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    var arg = arguments$1[0];
+    if (arg instanceof Node) { sum.push(arg); }
+    else if (arg && !isStr(arg) && arg.length) {
+      for (var j = 0, k = arg.length; j < k; j++) {
+        if (sum.indexOf(arg[j]) < 0) {
+          sum.push(arg[j]);
+        }
+      }
     }
-  )
+  }
+
+  return new Apheleia(sum, this.meta.context, { parent: this })
 };
 
 // Creates a new Apheleia instance with the elements found.
@@ -174,13 +175,13 @@ Apheleia.prototype.html = function html (futureChildren, cb) {
   // let's pass the parent and child nodes
   // and let the callback do all the work
   if (typeof cb === 'function') {
-    return this.each(function (futureParent) { return futureChildren.forEach(function (futureChild) { return cb(futureParent, futureChild); }); }
+    return this.forEach(function (futureParent) { return futureChildren.forEach(function (futureChild) { return cb(futureParent, futureChild); }); }
     )
   }
 
   // If the second argument is not a valid callback,
   // we will rewrite all parents HTML
-  return this.each(function (futureParent) {
+  return this.forEach(function (futureParent) {
     futureParent.innerHTML = '';
     futureChildren.forEach(function (futureChild) {
       futureParent.innerHTML += isStr(futureChild)
@@ -198,11 +199,11 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
       ? this[0].getAttribute(prepend + objOrKey)
-      : this.each(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); }
+      : this.forEach(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); }
         )
   }
 
-  return this.each(function (elem) {
+  return this.forEach(function (elem) {
     for (var key in objOrKey) {
       elem.setAttribute(prepend + key, objOrKey[key]);
     }
@@ -218,12 +219,12 @@ Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
       ? this[0][objOrKey]
-      : this.each(function (elem) {
+      : this.forEach(function (elem) {
         elem[objOrKey] = nothingOrValue;
       })
   }
 
-  return this.each(function (elem) {
+  return this.forEach(function (elem) {
     for (var key in objOrKey) {
       elem[key] = objOrKey[key];
     }
@@ -235,29 +236,29 @@ Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
       ? window.getComputedStyle(this[0])[objOrKey]
-      : this.each(function (elem) {
+      : this.forEach(function (elem) {
         elem.style[objOrKey] = nothingOrValue;
       })
   }
 
-  return this.each(function (elem) {
+  return this.forEach(function (elem) {
     for (var key in objOrKey) {
       elem.style[key] = objOrKey[key];
     }
   })
 };
 
-Apheleia.prototype.delete = function delete$1 () {
-  return this.each(function (elem) { return elem.parentNode.removeChild(elem); })
+Apheleia.prototype.remove = function remove () {
+  return this.forEach(function (elem) { return elem.parentNode.removeChild(elem); })
 };
 
 // Class methods
 Apheleia.prototype.toggleClass = function toggleClass (className) {
-  return this.each(function (elem) { return elem.classList.toggle(className); })
+  return this.forEach(function (elem) { return elem.classList.toggle(className); })
 };
 
 Apheleia.prototype.addClass = function addClass (stringOrArray) {
-  return this.each(
+  return this.forEach(
     function (elem) { return isStr(stringOrArray)
         ? elem.classList.add(stringOrArray)
         : elem.classList.add.apply(elem.classList, stringOrArray); }
@@ -265,7 +266,7 @@ Apheleia.prototype.addClass = function addClass (stringOrArray) {
 };
 
 Apheleia.prototype.removeClass = function removeClass (stringOrArray) {
-  return this.each(
+  return this.forEach(
     function (elem) { return isStr(stringOrArray)
         ? elem.classList.remove(stringOrArray)
         : elem.classList.remove.apply(elem.classList, stringOrArray); }
@@ -278,19 +279,19 @@ Apheleia.prototype.hasClass = function hasClass (className, every) {
 };
 
 // Wrapper for Node methods
-Apheleia.prototype.exec = function exec (fnName, args) {
-  return this.each(function (elem) { return elem[fnName].apply(elem, args); })
+Apheleia.prototype.call = function call (fnName, args) {
+  return this.forEach(function (elem) { return elem[fnName].apply(elem, args); })
 };
 
 Apheleia.prototype.on = function on (events, cb) {
-  return this.each(function (elem) { return events
+  return this.forEach(function (elem) { return events
       .split(' ')
       .forEach(function (eventName) { return elem.addEventListener(eventName, cb); }); }
   )
 };
 
 Apheleia.prototype.off = function off (events, cb) {
-  return this.each(function (elem) { return events
+  return this.forEach(function (elem) { return events
       .split(' ')
       .forEach(function (eventName) { return elem.removeEventListener(eventName, cb); }); }
   )
@@ -303,6 +304,32 @@ Apheleia.prototype.once = function once (events, cb) {
     self.off(e.type, onceFn);
   })
 };
+
+var newCollectionMethods = ['filter', 'map', 'slice'];
+var ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
+  newCollectionMethods
+);
+
+Object.getOwnPropertyNames(arrProto).forEach(function (key) {
+  if (
+    ignoreMethods.indexOf(key) === -1 &&
+    Apheleia.prototype[key] === undefined
+  ) {
+    Apheleia.prototype[key] = arrProto[key];
+  }
+});
+
+newCollectionMethods.forEach(function (method) {
+  Apheleia.prototype[method] = function () {
+    return new Apheleia(
+      arrProto[method].apply(this, arguments),
+      this.meta.context,
+      {
+        parent: this,
+      }
+    )
+  };
+});
 
 function aph (elems, context, metaObj) {
   return new Apheleia(elems, context, metaObj)
