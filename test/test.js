@@ -201,7 +201,7 @@ describe('CSS manipulation', function () {
   })
 
   it('should get single css attribute from first element', function () {
-    assert.equal(aph(aElement).css('opacity'), 0.5)
+    assert.equal(aph(aElement).css('opacity')[0], 0.5)
   })
 })
 

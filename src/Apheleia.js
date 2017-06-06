@@ -1,4 +1,9 @@
 const arrProto = Array.prototype
+let baseElement = document.createElement('div')
+
+function slice (what, from) {
+  return arrProto.slice.call(what, from || 0)
+}
 
 // Check if what's passed is a string
 function isStr (maybeStr) {
@@ -9,7 +14,7 @@ function isStr (maybeStr) {
 function smartQuerySelectorAll (selector, context) {
   return /^#[\w-]*$/.test(selector) // if #id
     ? [window[selector.slice(1)]]
-    : arrProto.slice.call(
+    : slice(
         /^\.[\w-]*$/.test(selector) // if .class
           ? context.getElementsByClassName(selector.slice(1))
           : /^\w+$/.test(selector) // if tag (a, span, div, ...)
@@ -60,7 +65,7 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
   // is not a string (first if, up there) and
   // is not an array
   if (strOrArrayOrAphOrElem && strOrArrayOrAphOrElem.length) {
-    return arrProto.slice.call(strOrArrayOrAphOrElem)
+    return slice(strOrArrayOrAphOrElem)
   }
 
   return []
@@ -91,7 +96,7 @@ class Apheleia {
   concat () {
     let sum = this.get()
     for (let i = 0, l = arguments.length; i < l; i++) {
-      const arg = arguments[0]
+      const arg = arguments[i]
       if (arg instanceof Node) sum.push(arg)
       else if (arg && !isStr(arg) && arg.length) {
         for (let j = 0, k = arg.length; j < k; j++) {
@@ -112,7 +117,7 @@ class Apheleia {
 
   // Gets the specified element or the whole array if no index was defined
   get (index) {
-    return +index === index ? this[index] : arrProto.slice.call(this)
+    return +index === index ? this[index] : slice(this)
   }
 
   // Appends the passed html/aph
@@ -158,7 +163,7 @@ class Apheleia {
       // If a .length is found and it's not a string,
       // we assume it's a standard indexed collection
       if (!isStr(item) && item.length) {
-        return acc.concat(arrProto.slice.call(item))
+        return acc.concat(slice(item))
       }
       acc.push(item)
       return acc
@@ -192,13 +197,13 @@ class Apheleia {
 
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
-        ? this[0].getAttribute(prepend + objOrKey)
-        : this.forEach(elem =>
-            elem.setAttribute(prepend + objOrKey, nothingOrValue)
-          )
+        ? this.map(elem => elem.getAttribute(prepend + objOrKey))
+        : this.forEach(function (elem) {
+          elem.setAttribute(prepend + objOrKey, nothingOrValue)
+        })
     }
 
-    return this.forEach(elem => {
+    return this.forEach(function (elem) {
       for (const key in objOrKey) {
         elem.setAttribute(prepend + key, objOrKey[key])
       }
@@ -213,13 +218,13 @@ class Apheleia {
   prop (objOrKey, nothingOrValue) {
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
-        ? this[0][objOrKey]
-        : this.forEach(elem => {
+        ? this.map(elem => elem[objOrKey])
+        : this.forEach(function (elem) {
           elem[objOrKey] = nothingOrValue
         })
     }
 
-    return this.forEach(elem => {
+    return this.forEach(function (elem) {
       for (const key in objOrKey) {
         elem[key] = objOrKey[key]
       }
@@ -230,13 +235,13 @@ class Apheleia {
   css (objOrKey, nothingOrValue) {
     if (isStr(objOrKey)) {
       return nothingOrValue === undefined
-        ? window.getComputedStyle(this[0])[objOrKey]
-        : this.forEach(elem => {
+        ? this.map(elem => window.getComputedStyle(elem)[objOrKey])
+        : this.forEach(function (elem) {
           elem.style[objOrKey] = nothingOrValue
         })
     }
 
-    return this.forEach(elem => {
+    return this.forEach(function (elem) {
       for (const key in objOrKey) {
         elem.style[key] = objOrKey[key]
       }
@@ -253,48 +258,51 @@ class Apheleia {
   }
 
   addClass (stringOrArray) {
-    return this.forEach(
-      elem =>
-        isStr(stringOrArray)
-          ? elem.classList.add(stringOrArray)
-          : elem.classList.add.apply(elem.classList, stringOrArray)
-    )
+    return this.forEach(function (elem) {
+      isStr(stringOrArray)
+        ? elem.classList.add(stringOrArray)
+        : elem.classList.add.apply(elem.classList, stringOrArray)
+    })
   }
 
   removeClass (stringOrArray) {
-    return this.forEach(
-      elem =>
-        isStr(stringOrArray)
-          ? elem.classList.remove(stringOrArray)
-          : elem.classList.remove.apply(elem.classList, stringOrArray)
-    )
+    return this.forEach(function (elem) {
+      isStr(stringOrArray)
+        ? elem.classList.remove(stringOrArray)
+        : elem.classList.remove.apply(elem.classList, stringOrArray)
+    })
   }
 
   hasClass (className, every) {
-    return arrProto[every ? 'every' : 'some'].call(this, elem =>
+    return this[every ? 'every' : 'some'](elem =>
       elem.classList.contains(className)
     )
   }
 
   // Wrapper for Node methods
-  call (fnName, args) {
-    return this.forEach(elem => elem[fnName].apply(elem, args))
+  call (fnName) {
+    const sum = []
+    const args = slice(arguments, 1)
+
+    this.forEach(elem => {
+      const result = elem[fnName].apply(elem, args)
+      if (result !== undefined) {
+        sum.push(result)
+      }
+    })
+    return sum.length ? sum : this
   }
 
   on (events, cb) {
-    return this.forEach(elem =>
-      events
-        .split(' ')
-        .forEach(eventName => elem.addEventListener(eventName, cb))
-    )
+    events.split(' ').forEach(eventName => this.addEventListener(eventName, cb))
+    return this
   }
 
   off (events, cb) {
-    return this.forEach(elem =>
-      events
-        .split(' ')
-        .forEach(eventName => elem.removeEventListener(eventName, cb))
-    )
+    events
+      .split(' ')
+      .forEach(eventName => this.removeEventListener(eventName, cb))
+    return this
   }
 
   once (events, cb) {
@@ -311,6 +319,7 @@ const ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
   newCollectionMethods
 )
 
+// Extending array prototype (methods that do not return a new collection)
 Object.getOwnPropertyNames(arrProto).forEach(key => {
   if (
     ignoreMethods.indexOf(key) === -1 &&
@@ -320,6 +329,7 @@ Object.getOwnPropertyNames(arrProto).forEach(key => {
   }
 })
 
+// Extending array prototype (methods that return new colletions)
 newCollectionMethods.forEach(method => {
   Apheleia.prototype[method] = function () {
     return new Apheleia(
@@ -331,5 +341,29 @@ newCollectionMethods.forEach(method => {
     )
   }
 })
+
+function buildSettersAndGetters (prop) {
+  if (!Apheleia.prototype[prop]) {
+    if (baseElement[prop] instanceof Function) {
+      Apheleia.prototype[prop] = function () {
+        return this.call.apply(this, [prop].concat(slice(arguments)))
+      }
+    } else {
+      Object.defineProperty(Apheleia.prototype, prop, {
+        get () {
+          return this.prop(prop)
+        },
+        set (value) {
+          this.prop(prop, value)
+        },
+      })
+    }
+  }
+}
+
+for (const prop in baseElement) {
+  buildSettersAndGetters(prop)
+}
+baseElement = null
 
 export default Apheleia

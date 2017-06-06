@@ -5,6 +5,11 @@
 }(this, (function () { 'use strict';
 
 var arrProto = Array.prototype;
+var baseElement = document.createElement('div');
+
+function slice (what, from) {
+  return arrProto.slice.call(what, from || 0)
+}
 
 // Check if what's passed is a string
 function isStr (maybeStr) {
@@ -15,7 +20,7 @@ function isStr (maybeStr) {
 function smartQuerySelectorAll (selector, context) {
   return /^#[\w-]*$/.test(selector) // if #id
     ? [window[selector.slice(1)]]
-    : arrProto.slice.call(
+    : slice(
         /^\.[\w-]*$/.test(selector) // if .class
           ? context.getElementsByClassName(selector.slice(1))
           : /^\w+$/.test(selector) // if tag (a, span, div, ...)
@@ -66,7 +71,7 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
   // is not a string (first if, up there) and
   // is not an array
   if (strOrArrayOrAphOrElem && strOrArrayOrAphOrElem.length) {
-    return arrProto.slice.call(strOrArrayOrAphOrElem)
+    return slice(strOrArrayOrAphOrElem)
   }
 
   return []
@@ -98,7 +103,7 @@ Apheleia.prototype.concat = function concat () {
 
   var sum = this.get();
   for (var i = 0, l = arguments.length; i < l; i++) {
-    var arg = arguments$1[0];
+    var arg = arguments$1[i];
     if (arg instanceof Node) { sum.push(arg); }
     else if (arg && !isStr(arg) && arg.length) {
       for (var j = 0, k = arg.length; j < k; j++) {
@@ -119,7 +124,7 @@ Apheleia.prototype.find = function find (selector) {
 
 // Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
-  return +index === index ? this[index] : arrProto.slice.call(this)
+  return +index === index ? this[index] : slice(this)
 };
 
 // Appends the passed html/aph
@@ -165,7 +170,7 @@ Apheleia.prototype.html = function html (futureChildren, cb) {
     // If a .length is found and it's not a string,
     // we assume it's a standard indexed collection
     if (!isStr(item) && item.length) {
-      return acc.concat(arrProto.slice.call(item))
+      return acc.concat(slice(item))
     }
     acc.push(item);
     return acc
@@ -198,9 +203,10 @@ Apheleia.prototype.attr = function attr (objOrKey, nothingOrValue, prepend) {
 
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
-      ? this[0].getAttribute(prepend + objOrKey)
-      : this.forEach(function (elem) { return elem.setAttribute(prepend + objOrKey, nothingOrValue); }
-        )
+      ? this.map(function (elem) { return elem.getAttribute(prepend + objOrKey); })
+      : this.forEach(function (elem) {
+        elem.setAttribute(prepend + objOrKey, nothingOrValue);
+      })
   }
 
   return this.forEach(function (elem) {
@@ -218,7 +224,7 @@ Apheleia.prototype.data = function data (objOrKey, nothingOrValue) {
 Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
-      ? this[0][objOrKey]
+      ? this.map(function (elem) { return elem[objOrKey]; })
       : this.forEach(function (elem) {
         elem[objOrKey] = nothingOrValue;
       })
@@ -235,7 +241,7 @@ Apheleia.prototype.prop = function prop (objOrKey, nothingOrValue) {
 Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
   if (isStr(objOrKey)) {
     return nothingOrValue === undefined
-      ? window.getComputedStyle(this[0])[objOrKey]
+      ? this.map(function (elem) { return window.getComputedStyle(elem)[objOrKey]; })
       : this.forEach(function (elem) {
         elem.style[objOrKey] = nothingOrValue;
       })
@@ -258,43 +264,54 @@ Apheleia.prototype.toggleClass = function toggleClass (className) {
 };
 
 Apheleia.prototype.addClass = function addClass (stringOrArray) {
-  return this.forEach(
-    function (elem) { return isStr(stringOrArray)
-        ? elem.classList.add(stringOrArray)
-        : elem.classList.add.apply(elem.classList, stringOrArray); }
-  )
+  return this.forEach(function (elem) {
+    isStr(stringOrArray)
+      ? elem.classList.add(stringOrArray)
+      : elem.classList.add.apply(elem.classList, stringOrArray);
+  })
 };
 
 Apheleia.prototype.removeClass = function removeClass (stringOrArray) {
-  return this.forEach(
-    function (elem) { return isStr(stringOrArray)
-        ? elem.classList.remove(stringOrArray)
-        : elem.classList.remove.apply(elem.classList, stringOrArray); }
-  )
+  return this.forEach(function (elem) {
+    isStr(stringOrArray)
+      ? elem.classList.remove(stringOrArray)
+      : elem.classList.remove.apply(elem.classList, stringOrArray);
+  })
 };
 
 Apheleia.prototype.hasClass = function hasClass (className, every) {
-  return arrProto[every ? 'every' : 'some'].call(this, function (elem) { return elem.classList.contains(className); }
+  return this[every ? 'every' : 'some'](function (elem) { return elem.classList.contains(className); }
   )
 };
 
 // Wrapper for Node methods
-Apheleia.prototype.call = function call (fnName, args) {
-  return this.forEach(function (elem) { return elem[fnName].apply(elem, args); })
+Apheleia.prototype.call = function call (fnName) {
+  var sum = [];
+  var args = slice(arguments, 1);
+
+  this.forEach(function (elem) {
+    var result = elem[fnName].apply(elem, args);
+    if (result !== undefined) {
+      sum.push(result);
+    }
+  });
+  return sum.length ? sum : this
 };
 
 Apheleia.prototype.on = function on (events, cb) {
-  return this.forEach(function (elem) { return events
-      .split(' ')
-      .forEach(function (eventName) { return elem.addEventListener(eventName, cb); }); }
-  )
+    var this$1 = this;
+
+  events.split(' ').forEach(function (eventName) { return this$1.addEventListener(eventName, cb); });
+  return this
 };
 
 Apheleia.prototype.off = function off (events, cb) {
-  return this.forEach(function (elem) { return events
-      .split(' ')
-      .forEach(function (eventName) { return elem.removeEventListener(eventName, cb); }); }
-  )
+    var this$1 = this;
+
+  events
+    .split(' ')
+    .forEach(function (eventName) { return this$1.removeEventListener(eventName, cb); });
+  return this
 };
 
 Apheleia.prototype.once = function once (events, cb) {
@@ -310,6 +327,7 @@ var ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
   newCollectionMethods
 );
 
+// Extending array prototype (methods that do not return a new collection)
 Object.getOwnPropertyNames(arrProto).forEach(function (key) {
   if (
     ignoreMethods.indexOf(key) === -1 &&
@@ -319,6 +337,7 @@ Object.getOwnPropertyNames(arrProto).forEach(function (key) {
   }
 });
 
+// Extending array prototype (methods that return new colletions)
 newCollectionMethods.forEach(function (method) {
   Apheleia.prototype[method] = function () {
     return new Apheleia(
@@ -330,6 +349,30 @@ newCollectionMethods.forEach(function (method) {
     )
   };
 });
+
+function buildSettersAndGetters (prop) {
+  if (!Apheleia.prototype[prop]) {
+    if (baseElement[prop] instanceof Function) {
+      Apheleia.prototype[prop] = function () {
+        return this.call.apply(this, [prop].concat(slice(arguments)))
+      };
+    } else {
+      Object.defineProperty(Apheleia.prototype, prop, {
+        get: function get () {
+          return this.prop(prop)
+        },
+        set: function set (value) {
+          this.prop(prop, value);
+        },
+      });
+    }
+  }
+}
+
+for (var prop in baseElement) {
+  buildSettersAndGetters(prop);
+}
+baseElement = null;
 
 function aph (elems, context, metaObj) {
   return new Apheleia(elems, context, metaObj)
