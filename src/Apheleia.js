@@ -314,10 +314,14 @@ class Apheleia {
   }
 }
 
-const newCollectionMethods = ['filter', 'map', 'slice']
-const ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
-  newCollectionMethods
-)
+const newCollectionMethods = ['filter', 'slice']
+const ignoreMethods = [
+  'join',
+  'copyWithin',
+  'fill',
+  'reduce',
+  'reduceRight',
+].concat(newCollectionMethods)
 
 // Extending array prototype (methods that do not return a new collection)
 Object.getOwnPropertyNames(arrProto).forEach(key => {

@@ -322,10 +322,13 @@ Apheleia.prototype.once = function once (events, cb) {
   })
 };
 
-var newCollectionMethods = ['filter', 'map', 'slice'];
-var ignoreMethods = ['join', 'copyWithin', 'fill'].concat(
-  newCollectionMethods
-);
+var newCollectionMethods = ['filter', 'slice'];
+var ignoreMethods = [
+  'join',
+  'copyWithin',
+  'fill',
+  'reduce',
+  'reduceRight' ].concat(newCollectionMethods);
 
 // Extending array prototype (methods that do not return a new collection)
 Object.getOwnPropertyNames(arrProto).forEach(function (key) {
