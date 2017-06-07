@@ -34,10 +34,13 @@
 		// 			]
 		// 		)
 		// 	)
-			aph('body').html(['<h1 class="que">OIE</h1>','<h2>OPAAAA</h2>'])
-			aph(window).on('click', function() {
-				console.log('hey')
-			})
+		aph('body').html([
+			'<h1 class="que">OIE</h1>',
+			aph('<h2>').prop('textContent', 'OPAAAAA')
+		])
+		aph(window).on('click', function() {
+			console.log('hey')
+		})
 	</script>
 
 	<a href="#1"></a>

@@ -14,3 +14,23 @@ aph.plug('repeat', function (numberOfClones) {
   }
   return aph(repeatedElements, this.context, this)
 })
+
+aph.plug('concat', function () {
+  function iterate (what, doing) {
+    for (let i = 0, len = what.length; i < len; i++) {
+      doing(what[i])
+    }
+  }
+  let sum = this.get()
+  iterate(arguments, arg => {
+    if (arg instanceof Node) sum.push(arg)
+    else if (arg && '' + arg !== arg && arg.length) {
+      iterate(arg, subArg => {
+        if (sum.indexOf(subArg) < 0) {
+          sum.push(subArg)
+        }
+      })
+    }
+  })
+  return aph(sum, this.meta.context, { parent: this })
+})

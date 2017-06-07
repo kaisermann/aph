@@ -10,8 +10,25 @@ function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
 
+function isValidCollection (maybeCollection) {
+  return maybeCollection && !isStr(maybeCollection) && maybeCollection.length
+}
+
+function flatten (what, recursive) {
+  let acc = []
+  for (let i = 0, item; i < what.length; i++) {
+    item = what[i]
+    if (isValidCollection(item)) {
+      acc = acc.concat(recursive ? flatten(item, true) : slice(item))
+    } else {
+      acc.push(item)
+    }
+  }
+  return acc
+}
+
 // Queries a selector (smartly)
-function smartQuerySelectorAll (selector, context) {
+function aphQuerySelector (selector, context) {
   return /^#[\w-]*$/.test(selector) // if #id
     ? [window[selector.slice(1)]]
     : slice(
@@ -25,11 +42,11 @@ function smartQuerySelectorAll (selector, context) {
 
 // Parses the passed context
 function aphParseContext (elemOrAphOrStr) {
-  return elemOrAphOrStr instanceof Element
+  return elemOrAphOrStr instanceof Node
     ? elemOrAphOrStr // If already a html element
     : isStr(elemOrAphOrStr)
-        ? smartQuerySelectorAll(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
-        : elemOrAphOrStr && elemOrAphOrStr.length
+        ? aphQuerySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
+        : isValidCollection(elemOrAphOrStr)
             ? elemOrAphOrStr[0] // If already an collection
             : document // Return the document.
 }
@@ -44,14 +61,13 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
       return [document.createElement(isCreationStr[1])]
     }
     // If not a creation string, let's search for the elements
-    return smartQuerySelectorAll(strOrArrayOrAphOrElem, ctx)
+    return aphQuerySelector(strOrArrayOrAphOrElem, ctx)
   }
 
   // If html element / window / document passed
   if (
-    strOrArrayOrAphOrElem instanceof Element ||
-    strOrArrayOrAphOrElem === window ||
-    strOrArrayOrAphOrElem === document
+    strOrArrayOrAphOrElem instanceof Node ||
+    strOrArrayOrAphOrElem === window
   ) {
     return [strOrArrayOrAphOrElem]
   }
@@ -64,7 +80,7 @@ function aphParseElements (strOrArrayOrAphOrElem, ctx) {
   // If collection passed and
   // is not a string (first if, up there) and
   // is not an array
-  if (strOrArrayOrAphOrElem && strOrArrayOrAphOrElem.length) {
+  if (isValidCollection(strOrArrayOrAphOrElem)) {
     return slice(strOrArrayOrAphOrElem)
   }
 
@@ -91,23 +107,6 @@ class Apheleia {
     // If the callback returns false, the iteration stops.
     for (let i = 0; i < this.length && cb.call(this, this[i], i++) !== false;);
     return this
-  }
-
-  concat () {
-    let sum = this.get()
-    for (let i = 0, l = arguments.length; i < l; i++) {
-      const arg = arguments[i]
-      if (arg instanceof Node) sum.push(arg)
-      else if (arg && !isStr(arg) && arg.length) {
-        for (let j = 0, k = arg.length; j < k; j++) {
-          if (sum.indexOf(arg[j]) < 0) {
-            sum.push(arg[j])
-          }
-        }
-      }
-    }
-
-    return new Apheleia(sum, this.meta.context, { parent: this })
   }
 
   // Creates a new Apheleia instance with the elements found.
@@ -145,47 +144,38 @@ class Apheleia {
   }
 
   // Sets or gets the html
-  html (futureChildren, cb) {
+  html (children, cb) {
     // If there're no arguments
     // Let's return the html of the first element
-    if (futureChildren === undefined) {
-      return this[0].innerHTML
+    if (children === undefined) {
+      return this.map(elem => elem.innerHTML)
     }
 
     // Manipulating arrays is easier
-    if (!Array.isArray(futureChildren)) {
-      futureChildren = [futureChildren]
+    if (!Array.isArray(children)) {
+      children = [children]
     }
 
     // If we receive any collections (arrays, lists, aph),
     // we must get its elements
-    futureChildren = futureChildren.reduce((acc, item) => {
-      // If a .length is found and it's not a string,
-      // we assume it's a standard indexed collection
-      if (!isStr(item) && item.length) {
-        return acc.concat(slice(item))
-      }
-      acc.push(item)
-      return acc
-    }, [])
+    children = flatten(children)
+    console.log(children)
 
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
     if (typeof cb === 'function') {
-      return this.forEach(futureParent =>
-        futureChildren.forEach(futureChild => cb(futureParent, futureChild))
+      return this.forEach(parent =>
+        children.forEach(child => cb(parent, child))
       )
     }
 
     // If the second argument is not a valid callback,
     // we will rewrite all parents HTML
-    return this.forEach(futureParent => {
-      futureParent.innerHTML = ''
-      futureChildren.forEach(futureChild => {
-        futureParent.innerHTML += isStr(futureChild)
-          ? futureChild
-          : futureChild.outerHTML
+    return this.forEach(parent => {
+      parent.innerHTML = ''
+      children.forEach(child => {
+        parent.innerHTML += isStr(child) ? child : child.outerHTML
       })
     })
   }
@@ -249,27 +239,29 @@ class Apheleia {
   }
 
   remove () {
-    return this.forEach(elem => elem.parentNode.removeChild(elem))
+    return this.forEach(function (elem) {
+      elem.parentNode.removeChild(elem)
+    })
   }
 
   // Class methods
   toggleClass (className) {
-    return this.forEach(elem => elem.classList.toggle(className))
-  }
-
-  addClass (stringOrArray) {
     return this.forEach(function (elem) {
-      isStr(stringOrArray)
-        ? elem.classList.add(stringOrArray)
-        : elem.classList.add.apply(elem.classList, stringOrArray)
+      elem.classList.toggle(className)
     })
   }
 
-  removeClass (stringOrArray) {
+  addClass () {
+    const args = slice(arguments)
     return this.forEach(function (elem) {
-      isStr(stringOrArray)
-        ? elem.classList.remove(stringOrArray)
-        : elem.classList.remove.apply(elem.classList, stringOrArray)
+      elem.classList.add.apply(elem.classList, args)
+    })
+  }
+
+  removeClass () {
+    const args = slice(arguments)
+    return this.forEach(function (elem) {
+      elem.classList.remove.apply(elem.classList, args)
     })
   }
 
@@ -284,9 +276,8 @@ class Apheleia {
     const sum = []
     const args = slice(arguments, 1)
 
-    this.forEach(elem => {
-      const result = elem[fnName].apply(elem, args)
-      if (result !== undefined) {
+    this.forEach((elem, result) => {
+      if ((result = elem[fnName].apply(elem, args))) {
         sum.push(result)
       }
     })
@@ -313,9 +304,15 @@ class Apheleia {
     })
   }
 }
+const AphProto = Apheleia.prototype
+if (window.Symbol && Symbol.iterator) {
+  AphProto[Symbol.iterator] = AphProto.values = arrProto[Symbol.iterator]
+}
 
+// Extending
 const newCollectionMethods = ['filter', 'slice']
 const ignoreMethods = [
+  'concat',
   'join',
   'copyWithin',
   'fill',
@@ -325,48 +322,44 @@ const ignoreMethods = [
 
 // Extending array prototype (methods that do not return a new collection)
 Object.getOwnPropertyNames(arrProto).forEach(key => {
-  if (
-    ignoreMethods.indexOf(key) === -1 &&
-    Apheleia.prototype[key] === undefined
-  ) {
-    Apheleia.prototype[key] = arrProto[key]
+  if (ignoreMethods.indexOf(key) === -1 && AphProto[key] === undefined) {
+    AphProto[key] = arrProto[key]
   }
 })
 
 // Extending array prototype (methods that return new colletions)
 newCollectionMethods.forEach(method => {
-  Apheleia.prototype[method] = function () {
+  AphProto[method] = function () {
     return new Apheleia(
       arrProto[method].apply(this, arguments),
       this.meta.context,
-      {
-        parent: this,
-      }
+      { parent: this }
     )
   }
 })
 
-function buildSettersAndGetters (prop) {
-  if (!Apheleia.prototype[prop]) {
-    if (baseElement[prop] instanceof Function) {
-      Apheleia.prototype[prop] = function () {
-        return this.call.apply(this, [prop].concat(slice(arguments)))
-      }
-    } else {
-      Object.defineProperty(Apheleia.prototype, prop, {
-        get () {
-          return this.prop(prop)
-        },
-        set (value) {
-          this.prop(prop, value)
-        },
-      })
+// Extending default HTMLElement methods and properties
+function extendElementProperty (prop) {
+  if (baseElement[prop] instanceof Function) {
+    AphProto[prop] = function () {
+      return this.call.apply(this, [prop].concat(slice(arguments)))
     }
+  } else {
+    Object.defineProperty(AphProto, prop, {
+      get () {
+        return this.prop(prop)
+      },
+      set (value) {
+        this.prop(prop, value)
+      },
+    })
   }
 }
 
 for (const prop in baseElement) {
-  buildSettersAndGetters(prop)
+  if (!AphProto[prop]) {
+    extendElementProperty(prop)
+  }
 }
 baseElement = null
 

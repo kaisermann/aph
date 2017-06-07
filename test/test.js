@@ -174,7 +174,7 @@ describe('Class manipulation', function () {
   it('should have added all classes passed as arguments', function () {
     aph('<div>').appendTo(document.body)
     aph('<div>')
-      .addClass(['test-class', 'test-class-2'])
+      .addClass('test-class', 'test-class-2')
       .appendTo(document.body)
     assert.equal(aph('.test-class').hasClass('test-class-2'), true)
   })
