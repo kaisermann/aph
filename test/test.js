@@ -60,12 +60,12 @@ describe('Creating and deleting items', function () {
 
   it('should create a default page like structure with .html()', function () {
     aph(document.body).prepend(
-      aph('<div>')
-        .addClass('page-content')
+      aph('<div>').classList
+        .add('page-content')
         .append([
           document.createElement('header'),
           document.createElement('aside'),
-          aph('<main>').append(aph('<div>').addClass('main-content')),
+          aph('<main>').append(aph('<div>').classList.add('main-content')),
           aph('<footer>'),
         ])
     )
@@ -106,22 +106,22 @@ describe('Selecting items', function () {
   })
 
   it('should find when passed an #id selector', function () {
-    aph(aElement).attr('id', 'test-id')
+    aph(aElement).setAttribute('id', 'test-id')
     assert.equal(aph('#test-id')[0].tagName, 'DIV')
   })
 
   it('should find when passed an .class selector', function () {
-    aph(aElement).attr('class', 'test-class')
+    aph(aElement).setAttribute('class', 'test-class')
     assert.equal(aph('.test-class')[0].tagName, 'DIV')
   })
 
   it('should find when passed an singlet selector', function () {
-    aph(aElement).attr('class', 'test-class')
+    aph(aElement).setAttribute('class', 'test-class')
     assert.equal(aph('div')[0].tagName, 'DIV')
   })
 
   it('should find when passed another Apheleia instance', function () {
-    aph(aElement).attr('class', 'test-class')
+    aph(aElement).setAttribute('class', 'test-class')
     assert.equal(aph(aph('div'))[0].tagName, 'DIV')
   })
 
@@ -129,20 +129,20 @@ describe('Selecting items', function () {
     assert.equal(aph('*').get().length, 7)
   })
 
-  it("should return null when the apheleia has no 'meta.parent' property", function () {
+  it("should return null when the apheleia has no 'meta.owner' property", function () {
     const aInstance = aph('*')
-    assert.equal(aInstance.meta.parent, null)
+    assert.equal(aInstance.meta.owner, null)
   })
 
-  it("should return the parent Apheleia instance when 'meta.parent' is not null", function () {
+  it("should return the owner Apheleia instance when 'meta.owner' is not null", function () {
     const aInstance = aph('*')
     const aNotherInstance = aInstance.find('div')
-    assert.equal(aNotherInstance.meta.parent, aInstance)
+    assert.equal(aNotherInstance.meta.owner, aInstance)
   })
 
   it('should search for a context element when string passed as parameter', function () {
     const aInstance = aph('.test-class')
-    aph('<span>').addClass('inside-class').appendTo(aInstance[0])
+    aph('<span>').classList.add('inside-class').appendTo(aInstance[0])
     assert.isTrue(
       aph('.inside-class', '.test-class').meta.context.classList.contains(
         'test-class'
@@ -154,14 +154,9 @@ describe('Selecting items', function () {
 })
 
 describe('Element manipulation', function () {
-  it('should accept an object as attributes setup', function () {
-    aph(aElement).attr({ style: 'width: 400px' })
+  it('should set an attribute with a specified value', function () {
+    aph(aElement).setAttribute('style', 'width: 400px')
     assert.equal(aElement[0].style.width, '400px')
-  })
-
-  it('should accept an object as data setup', function () {
-    aph(aElement).data({ slug: 'test-slug-2' })
-    assert.equal(aElement[0].getAttribute('data-slug'), 'test-slug-2')
   })
 
   it('should accept an object as properties setup', function () {
@@ -173,18 +168,28 @@ describe('Element manipulation', function () {
 describe('Class manipulation', function () {
   it('should have added all classes passed as arguments', function () {
     aph('<div>').appendTo(document.body)
-    aph('<div>')
-      .addClass('test-class', 'test-class-2')
+    aph('<div>').classList
+      .add('test-class', 'test-class-2')
       .appendTo(document.body)
-    assert.equal(aph('.test-class').hasClass('test-class-2'), true)
+
+    assert.equal(
+      aph('.test-class').classList.contains('test-class-2').some(bool => bool),
+      true
+    )
   })
 
   it('should return false if all divs has same class (for this test case)', function () {
-    assert.equal(aph('div').hasClass('test-class', true), false)
+    assert.equal(
+      aph('div').classList.contains('test-class').every(bool => bool),
+      false
+    )
   })
 
   it('should return true if at least one div has the specified class', function () {
-    assert.equal(aph('div').hasClass('test-class'), true)
+    assert.equal(
+      aph('div').classList.contains('test-class').some(bool => bool),
+      true
+    )
   })
 })
 
