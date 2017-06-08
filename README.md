@@ -21,3 +21,7 @@ The goal of this library is to be a versatile and lightweight way of doing some 
 * iOS Safari >= 7.0
 * Opera >= 15
 * Safari >= 7
+
+
+### Credits and inspirations
+* ['NodeList.js'](https://github.com/eorroe/NodeList.js) 

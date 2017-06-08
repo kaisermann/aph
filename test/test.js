@@ -6,7 +6,7 @@ const aph = require('../dist/aph')
 let aElement = aph('<div>')
 let aElement2 = aph('<div>')
 
-aph.plug('repeat', function (numberOfClones) {
+aph.fn.repeat = function (numberOfClones) {
   let repeatedElements = []
   let cachedElements = this.get()
   for (let i = numberOfClones; i--;) {
@@ -15,7 +15,7 @@ aph.plug('repeat', function (numberOfClones) {
     )
   }
   return aph(repeatedElements, this.meta.context, this)
-})
+}
 
 describe('Creating and deleting items', function () {
   it('should create an element when a string between <str> is passed', function () {
@@ -212,9 +212,9 @@ describe('CSS manipulation', function () {
 
 describe('Apheleia plugins', function () {
   it('should create a .log() plugin that logs all the instance loaded elements', function () {
-    aph.plug('log', function () {
+    aph.fn.log = function () {
       this.forEach(item => console.log(item))
-    })
+    }
     assert.isFunction(aph().log)
   })
 })
