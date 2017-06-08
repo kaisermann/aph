@@ -2,15 +2,53 @@
 
 ## Aph
 
-A very lightweight (**1168 bytes** minified and gzipped), simple and easy-to-use DOM manipulation library.
+A very lightweight (**1539 bytes** minified and gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
-The goal of this library is to be a versatile and lightweight way of doing some simple DOM manipulations with vanilla JS. In no way it tries to replace any other framework such as jQuery, Zepto, Cash, etc.
+**And what is simpler than writing all your code *almost* as if you're doing it with Vanilla JS?**
 
-*<span style="color: red;">This project is in active development and it's still being changed very frequently. </span>*
+Yep, you read it right. Almost like Vanilla JS.
 
-### [Documentation](https://github.com/kaisermann/aph/wiki)
+**Sample:**
+```html
+<html>
+  <body>
+    <span></span>
+    <span></span>
+    <span></span>
+  </body>
+  <script>
+    // Behooooold
+    aph('span')
+      .classList.add('test-class')
+      .setAttribute('custom-attr', 'test-attr')
+      .style.setProperty('color', 'red')
+      .textContent = 'Ops'
+  </script>
+</html>
+```
+
+**Result:**
+```html
+...
+  <span style="color: red" class="test-class" custom-attr="test-attr">
+    Ops
+  </span>
+  <span style="color: red" class="test-class" custom-attr="test-attr">
+    Ops
+  </span>
+  <span style="color: red" class="test-class" custom-attr="test-attr">
+    Ops
+  </span>
+...
+```
+
+<p align="center">
+  <img src="./misc/gladiator.gif">
+</p>
+
+#### [Go check the Documentation!](https://github.com/kaisermann/aph/wiki)
 
 ### Support
 * Chrome >= 28
@@ -24,4 +62,4 @@ The goal of this library is to be a versatile and lightweight way of doing some 
 
 
 ### Credits and inspirations
-* ['NodeList.js'](https://github.com/eorroe/NodeList.js) 
+* ['NodeList.js'](https://github.com/eorroe/NodeList.js)
