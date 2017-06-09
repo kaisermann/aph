@@ -1,27 +1,4 @@
-import { protoCache, querySelector } from './shared'
-
-export function extendElementProp (base, key, prop, irrelevantCb) {
-  if (prop instanceof Function) {
-    base[key] = function () {
-      const args = arguments
-      const sum = this.map(item => item[key].apply(item, args))
-      return isRelevantCollection(sum) ? sum : irrelevantCb(sum, this)
-    }
-  } else {
-    propGetSetWithProp(base, key)
-  }
-}
-// Sets the set/get methods of a property as the Apheleia.prop method
-export function propGetSetWithProp (obj, key) {
-  Object.defineProperty(obj, key, {
-    get () {
-      return this.prop(key)
-    },
-    set (value) {
-      this.prop(key, value)
-    },
-  })
-}
+import { arrayProto, querySelector } from './shared'
 
 // Check if what's passed is a string
 export function isStr (maybeStr) {
@@ -41,7 +18,7 @@ export function isRelevantCollection (collection) {
 
 // Slice a array-like collection
 export function slice (what, from) {
-  return protoCache.Array.slice.call(what, from || 0)
+  return arrayProto.slice.call(what, from || 0)
 }
 
 // Parses the passed context
@@ -86,9 +63,58 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
     return strOrCollectionOrElem
   }
 
-  if (strOrCollectionOrElem != null) {
-    throw Error('aph: Invalid first parameter')
+  return []
+}
+
+export function assignMethodsAndProperties (
+  what,
+  propCollection,
+  undefinedResultCallback
+) {
+  function innerFunction (key) {
+    if (what[key] == null) {
+      try {
+        if (propCollection[key] instanceof Function) {
+          what[key] = function () {
+            const args = arguments
+            const result = this.map(i => propCollection[key].apply(i, args))
+            return isRelevantCollection(result)
+              ? result
+              : undefinedResultCallback ? undefinedResultCallback(this) : this
+          }
+        } else {
+          propGetSetWithProp(what, key)
+        }
+      } catch (ex) {
+        // If we reach this exception, we are probably dealing with a property / getter / setter
+        propGetSetWithProp(what, key)
+      }
+    }
   }
 
-  return []
+  // For some reason for-in loops with primitive prototypes doesn't work
+  // So... If we're dealing with a primitive type, let's get it's prototype
+  // And iterate with a Object.getOwnPropertyNames().forEach()
+  if (typeof propCollection !== 'object') {
+    propCollection = Object.getPrototypeOf(propCollection)
+    Object.getOwnPropertyNames(propCollection).forEach(innerFunction)
+  } else {
+    // If we're dealing with objects, let's iterate through it's properties
+    // With a for-in loop
+    for (let key in propCollection) {
+      innerFunction(key)
+    }
+  }
+}
+
+// Sets the set/get methods of a property as the Apheleia.prop method
+export function propGetSetWithProp (obj, key) {
+  Object.defineProperty(obj, key, {
+    get () {
+      return this.get(key)
+    },
+    set (value) {
+      this.set(key, value)
+    },
+  })
 }

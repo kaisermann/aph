@@ -1,36 +1,24 @@
-import { protoCache, flatWrap } from './shared.js'
 import {
-  propGetSetWithProp,
   isStr,
   isArrayLike,
-  isRelevantCollection,
   slice,
   aphParseContext,
   aphParseElements,
 } from './helpers.js'
 
-const arrayProto = protoCache.Array
-
-class Apheleia {
-  constructor (elems, context, metaObj) {
-    this.meta = metaObj || {}
+export default class Apheleia {
+  constructor (elems, context, aphMetaObj) {
+    this.aph = aphMetaObj || {}
 
     for (
       let list = aphParseElements(
         elems,
-        (this.meta.context = aphParseContext(context)) // Sets current context
+        (this.aph.context = aphParseContext(context)) // Sets current context
       ),
         len = (this.length = list.length); // Sets current length
       len--; // Ends loop when reaches 0
       this[len] = list[len] // Builds the array-like structure
     );
-  }
-
-  // Wrapper for Node methods
-  call (fnName) {
-    const args = slice(arguments, 1)
-    const sum = this.map(item => item[fnName].apply(item, args))
-    return isRelevantCollection(sum) ? sum : this
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -45,44 +33,26 @@ class Apheleia {
     return this
   }
 
-  map () {
-    return flatWrap(arrayProto.map.apply(this, arguments), this)
-  }
-
-  filter () {
-    return new Apheleia(
-      arrayProto.filter.apply(this, arguments),
-      this.meta.context,
-      { owner: this }
-    )
-  }
-
-  slice () {
-    return new Apheleia(
-      arrayProto.slice.apply(this, arguments),
-      this.meta.context,
-      { owner: this }
-    )
-  }
-
   // Creates a new Apheleia instance with the elements found.
   find (selector) {
     return new Apheleia(selector, this[0], { owner: this })
   }
 
-  // Gets the specified element or the whole array if no index was defined
-  get (index) {
-    return +index === index ? this[index] : slice(this)
+  // Returns the collection in array format
+  asArray () {
+    return slice(this)
   }
 
-  // Node property manipulation method
-  prop (objOrKey, nothingOrValue) {
-    if (isStr(objOrKey)) {
-      return nothingOrValue == null
-        ? this.map(elem => elem[objOrKey])
-        : this.forEach(function (elem) {
-          elem[objOrKey] = nothingOrValue
-        })
+  // Object Property manipulation methods
+  get (key) {
+    return this.map(elem => elem[key])
+  }
+
+  set (objOrKey, nothingOrValue) {
+    if (typeof objOrKey !== 'object') {
+      return this.forEach(function (elem) {
+        elem[objOrKey] = nothingOrValue
+      })
     }
 
     return this.forEach(function (elem) {
@@ -92,9 +62,9 @@ class Apheleia {
     })
   }
 
-  // CSS
+  // Sets CSS or gets the computed value
   css (objOrKey, nothingOrValue) {
-    if (isStr(objOrKey)) {
+    if (typeof objOrKey !== 'object') {
       return nothingOrValue == null
         ? this.map(elem => getComputedStyle(elem)[objOrKey])
         : this.forEach(function (elem) {
@@ -109,6 +79,7 @@ class Apheleia {
     })
   }
 
+  // DOM Manipulation
   remove () {
     return this.forEach(function (elem) {
       elem.parentNode.removeChild(elem)
@@ -181,43 +152,3 @@ class Apheleia {
     })
   }
 }
-
-// Let's cache the prototype
-protoCache.Apheleia = Apheleia.prototype
-
-// Extending the Array Prototype
-const ignoreMethods = [
-  'concat',
-  'join',
-  'copyWithin',
-  'fill',
-  'reduce',
-  'reduceRight',
-]
-
-Object.getOwnPropertyNames(arrayProto).forEach(key => {
-  if (!~ignoreMethods.indexOf(key) && protoCache.Apheleia[key] == null) {
-    protoCache.Apheleia[key] = arrayProto[key]
-  }
-})
-
-// Extending default HTMLElement methods and properties
-let baseElement = document.createElement('div')
-function extendElementProp (prop) {
-  if (!protoCache.Apheleia[prop]) {
-    if (baseElement[prop] instanceof Function) {
-      protoCache.Apheleia[prop] = function () {
-        return this.call.apply(this, [prop].concat(slice(arguments)))
-      }
-    } else {
-      propGetSetWithProp(protoCache.Apheleia, prop)
-    }
-  }
-}
-
-for (const prop in baseElement) {
-  extendElementProp(prop)
-}
-baseElement = null
-
-export default Apheleia

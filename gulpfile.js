@@ -21,7 +21,6 @@ gulp.task('build', function () {
       $.betterRollup(
         {
           plugins: [
-            // Transpiles the code, ignoring coniguration from the `node_modules`
             rollUpBuble({
               transforms: {
                 arrow: true,
