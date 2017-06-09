@@ -34,16 +34,20 @@ export function aphParseContext (elemOrAphOrStr) {
 
 // Parses the elements passed to aph()
 let documentFragment
+export function createElement (str) {
+  if (!documentFragment) {
+    documentFragment = document.implementation.createHTMLDocument()
+  }
+  documentFragment.body.innerHTML = str
+  return documentFragment.body.childNodes[0]
+}
+
 export function aphParseElements (strOrCollectionOrElem, ctx) {
   // If string passed
   if (isStr(strOrCollectionOrElem)) {
     // If creation string, create the element
     if (/<.+>/.test(strOrCollectionOrElem)) {
-      if (!documentFragment) {
-        documentFragment = document.implementation.createHTMLDocument()
-      }
-      documentFragment.body.innerHTML = strOrCollectionOrElem
-      return documentFragment.body.childNodes
+      return [createElement(strOrCollectionOrElem)]
     }
     // If not a creation string, let's search for the elements
     return querySelector(strOrCollectionOrElem, ctx)
@@ -57,8 +61,7 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
     return [strOrCollectionOrElem]
   }
 
-  // If collection passed and
-  // is not a string (first if, up there)
+  // If collection passed
   if (isArrayLike(strOrCollectionOrElem)) {
     return strOrCollectionOrElem
   }
@@ -69,15 +72,36 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
 export function assignMethodsAndProperties (
   what,
   propCollection,
-  undefinedResultCallback
+  undefinedResultCallback,
+  ignoreList
 ) {
+  ignoreList = ignoreList || []
   function innerFunction (key) {
-    if (what[key] == null) {
+    if (what[key] == null && !~ignoreList.indexOf(key)) {
       try {
         if (propCollection[key] instanceof Function) {
           what[key] = function () {
             const args = arguments
-            const result = this.map(i => propCollection[key].apply(i, args))
+            let result
+            // If the method name begins with 'set' and
+            // there's only one argument and it's a plain object
+            // we assume we're dealing with a set method.
+            // Therefore, we make a method call for each object entry
+            if (
+              /^set/i.test(key) &&
+              args.length === 1 &&
+              args[0].constructor === Object
+            ) {
+              result = this.map(i => {
+                for (let objKey in args[0]) {
+                  propCollection[key].call(i, objKey, args[0][objKey])
+                }
+                // implicit 'return undefined'
+                // We return nothing as this is a 'set' method call
+              })
+            } else {
+              result = this.map(i => propCollection[key].apply(i, args))
+            }
             return isRelevantCollection(result)
               ? result
               : undefinedResultCallback ? undefinedResultCallback(this) : this

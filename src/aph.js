@@ -37,4 +37,6 @@ Object.getOwnPropertyNames(arrayProto).forEach(key => {
 })
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(aph.fn, document.createElement('div'))
+assignMethodsAndProperties(aph.fn, document.createElement('div'), null, [
+  'remove',
+])

@@ -51,10 +51,14 @@ export function flatWrap (what, owner) {
           sampleEntry = what[counter++]
         );
 
-        const methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'set']
+        const methodsToBeCopied = ['map', 'filter', 'forEach', 'get']
         methodsToBeCopied.forEach(function (key) {
           what[key] = Apheleia.prototype[key]
         })
+        what.set = function () {
+          Apheleia.prototype.set.apply(this, arguments)
+          return this.aph.owner
+        }
         what.aph = { owner: owner }
 
         // If we're dealing with objects, let's iterate through it's methods
@@ -66,10 +70,10 @@ export function flatWrap (what, owner) {
           instance => instance.aph.owner
         )
 
-        console.log(what)
         return what
       }
     }
   }
+
   return new Apheleia(acc, owner.aph.context, { owner: owner })
 }

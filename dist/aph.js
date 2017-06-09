@@ -50,10 +50,14 @@ function flatWrap (what, owner) {
           sampleEntry = what[counter++]
         ){  }
 
-        var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'set'];
+        var methodsToBeCopied = ['map', 'filter', 'forEach', 'get'];
         methodsToBeCopied.forEach(function (key) {
           what[key] = Apheleia.prototype[key];
         });
+        what.set = function () {
+          Apheleia.prototype.set.apply(this, arguments);
+          return this.aph.owner
+        };
         what.aph = { owner: owner };
 
         // If we're dealing with objects, let's iterate through it's methods
@@ -65,14 +69,15 @@ function flatWrap (what, owner) {
           function (instance) { return instance.aph.owner; }
         );
 
-        console.log(what);
         return what
       }
     }
   }
+
   return new Apheleia(acc, owner.aph.context, { owner: owner })
 }
 
+// Check if what's passed is a string
 function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
@@ -106,16 +111,20 @@ function aphParseContext (elemOrAphOrStr) {
 
 // Parses the elements passed to aph()
 var documentFragment;
+function createElement (str) {
+  if (!documentFragment) {
+    documentFragment = document.implementation.createHTMLDocument();
+  }
+  documentFragment.body.innerHTML = str;
+  return documentFragment.body.childNodes[0]
+}
+
 function aphParseElements (strOrCollectionOrElem, ctx) {
   // If string passed
   if (isStr(strOrCollectionOrElem)) {
     // If creation string, create the element
     if (/<.+>/.test(strOrCollectionOrElem)) {
-      if (!documentFragment) {
-        documentFragment = document.implementation.createHTMLDocument();
-      }
-      documentFragment.body.innerHTML = strOrCollectionOrElem;
-      return documentFragment.body.childNodes
+      return [createElement(strOrCollectionOrElem)]
     }
     // If not a creation string, let's search for the elements
     return querySelector(strOrCollectionOrElem, ctx)
@@ -129,8 +138,7 @@ function aphParseElements (strOrCollectionOrElem, ctx) {
     return [strOrCollectionOrElem]
   }
 
-  // If collection passed and
-  // is not a string (first if, up there)
+  // If collection passed
   if (isArrayLike(strOrCollectionOrElem)) {
     return strOrCollectionOrElem
   }
@@ -141,15 +149,36 @@ function aphParseElements (strOrCollectionOrElem, ctx) {
 function assignMethodsAndProperties (
   what,
   propCollection,
-  undefinedResultCallback
+  undefinedResultCallback,
+  ignoreList
 ) {
+  ignoreList = ignoreList || [];
   function innerFunction (key) {
-    if (what[key] == null) {
+    if (what[key] == null && !~ignoreList.indexOf(key)) {
       try {
         if (propCollection[key] instanceof Function) {
           what[key] = function () {
             var args = arguments;
-            var result = this.map(function (i) { return propCollection[key].apply(i, args); });
+            var result;
+            // If the method name begins with 'set' and
+            // there's only one argument and it's a plain object
+            // we assume we're dealing with a set method.
+            // Therefore, we make a method call for each object entry
+            if (
+              /^set/i.test(key) &&
+              args.length === 1 &&
+              args[0].constructor === Object
+            ) {
+              result = this.map(function (i) {
+                for (var objKey in args[0]) {
+                  propCollection[key].call(i, objKey, args[0][objKey]);
+                }
+                // implicit 'return undefined'
+                // We return nothing as this is a 'set' method call
+              });
+            } else {
+              result = this.map(function (i) { return propCollection[key].apply(i, args); });
+            }
             return isRelevantCollection(result)
               ? result
               : undefinedResultCallback ? undefinedResultCallback(this) : this
@@ -264,7 +293,7 @@ Apheleia.prototype.css = function css (objOrKey, nothingOrValue) {
 };
 
 // DOM Manipulation
-Apheleia.prototype.remove = function remove () {
+Apheleia.prototype.detach = function detach () {
   return this.forEach(function (elem) {
     elem.parentNode.removeChild(elem);
   })
@@ -302,37 +331,40 @@ Apheleia.prototype.html = function html (children, cb) {
     return this.map(function (elem) { return elem.innerHTML; })
   }
 
+  // If the .html() is called without a callback, let's erase everything
+  // And append the nodes
+  if (!(cb instanceof Function)) {
+    return this.forEach(function (parent) {
+      parent.innerHTML = '';
+    }).append(children)
+  }
+
   // Manipulating arrays is easier
-  if (!Array.isArray(children)) {
+  if (!isArrayLike(children)) {
     children = [children];
   }
 
   // If we receive any collections (arrays, lists, aph),
   // we must get its elements
-  children = children.reduce(function (acc, item) {
-    if (isArrayLike(item)) {
-      return acc.concat(slice(item))
+  var flatChildren = [];
+  for (var i = 0, len = children.length; i < len; i++) {
+    if (isArrayLike(children[i])) {
+      for (var j = 0, len2 = children[i].length; j < len2; j++) {
+        if (!~flatChildren.indexOf(children[j])) {
+          flatChildren.push(children[j]);
+        }
+      }
+    } else {
+      flatChildren.push(children[i]);
     }
-    acc.push(item);
-    return acc
-  }, []);
+  }
 
   // If a callback is received as the second argument
   // let's pass the parent and child nodes
   // and let the callback do all the work
-  if (cb instanceof Function) {
-    return this.forEach(function (parent) { return children.forEach(function (child) { return cb(parent, child); }); }
-    )
-  }
-
-  // If the second argument is not a valid callback,
-  // we will rewrite all parents HTML
-  return this.forEach(function (parent) {
-    parent.innerHTML = '';
-    children.forEach(function (child) {
-      parent.innerHTML += isStr(child) ? child : child.outerHTML;
-    });
-  })
+  return this.forEach(function (parent) { return flatChildren.forEach(function (child) { return cb(parent, isStr(child) ? createElement(child) : child); }
+    ); }
+  )
 };
 
 function aph (elems, context, metaObj) {
@@ -369,7 +401,8 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 });
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(aph.fn, document.createElement('div'));
+assignMethodsAndProperties(aph.fn, document.createElement('div'), null, [
+  'remove' ]);
 
 return aph;
 

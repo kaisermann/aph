@@ -2,6 +2,7 @@ import {
   isStr,
   isArrayLike,
   slice,
+  createElement,
   aphParseContext,
   aphParseElements,
 } from './helpers.js'
@@ -80,7 +81,7 @@ export default class Apheleia {
   }
 
   // DOM Manipulation
-  remove () {
+  detach () {
     return this.forEach(function (elem) {
       elem.parentNode.removeChild(elem)
     })
@@ -118,37 +119,41 @@ export default class Apheleia {
       return this.map(elem => elem.innerHTML)
     }
 
+    // If the .html() is called without a callback, let's erase everything
+    // And append the nodes
+    if (!(cb instanceof Function)) {
+      return this.forEach(parent => {
+        parent.innerHTML = ''
+      }).append(children)
+    }
+
     // Manipulating arrays is easier
-    if (!Array.isArray(children)) {
+    if (!isArrayLike(children)) {
       children = [children]
     }
 
     // If we receive any collections (arrays, lists, aph),
     // we must get its elements
-    children = children.reduce((acc, item) => {
-      if (isArrayLike(item)) {
-        return acc.concat(slice(item))
+    const flatChildren = []
+    for (let i = 0, len = children.length; i < len; i++) {
+      if (isArrayLike(children[i])) {
+        for (let j = 0, len2 = children[i].length; j < len2; j++) {
+          if (!~flatChildren.indexOf(children[j])) {
+            flatChildren.push(children[j])
+          }
+        }
+      } else {
+        flatChildren.push(children[i])
       }
-      acc.push(item)
-      return acc
-    }, [])
+    }
 
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
-    if (cb instanceof Function) {
-      return this.forEach(parent =>
-        children.forEach(child => cb(parent, child))
+    return this.forEach(parent =>
+      flatChildren.forEach(child =>
+        cb(parent, isStr(child) ? createElement(child) : child)
       )
-    }
-
-    // If the second argument is not a valid callback,
-    // we will rewrite all parents HTML
-    return this.forEach(parent => {
-      parent.innerHTML = ''
-      children.forEach(child => {
-        parent.innerHTML += isStr(child) ? child : child.outerHTML
-      })
-    })
+    )
   }
 }
