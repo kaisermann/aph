@@ -72,7 +72,7 @@ class Apheleia {
 
   // Gets the specified element or the whole array if no index was defined
   get (index) {
-    return +index === index ? this[index] : flatWrap(this)
+    return +index === index ? this[index] : slice(this)
   }
 
   // Node property manipulation method

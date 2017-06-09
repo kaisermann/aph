@@ -12,40 +12,20 @@
 
 	<script type="text/javascript" src="./dist/aph.js"></script>
 	<script type="text/javascript" src="./plugins.js"></script>
-	<script>
-		// console.log = function(...args) {
-		// 	args.forEach(arg => document.body.innerHTML += arg + '<br>')
-		// }
-		//
-		// aph(document.body)
-		// 	.html(
-		// 		aph('<div>')
-		// 		.addClass('page-content')
-		// 		.append(
-		// 			[
-		// 				document.createElement('header'),
-		// 				document.createElement('aside'),
-		// 				aph('<main>').append(
-		// 					aph('<div>')
-		// 					.addClass('main-content')
-		// 					.prop('textContent', 'Hello wooooorld!')
-		// 				),
-		// 				aph('<footer>')
-		// 			]
-		// 		)
-		// 	)
-		aph('body').html([
-			'<h1 class="que">OIE</h1>',
-			aph('<h2>').prop('textContent', 'OPAAAAA')
-		])
-		aph(window).addEventListener('click', function() {
-			console.log('hey')
-		})
-	</script>
 
 	<span style="color: red; font-size: 18px">KOE</span>
 	<span style="color: green; font-size: 18px">KOE2</span>
 	<span style="color: blue; font-size: 18px">KOE3</span>
+
+	<script>
+		aph('span')
+			.classList
+				.add('test-class')
+			.setAttribute('custom-attr', 'test-attr')
+			.style
+				.setProperty('color', 'red')
+			.textContent = 'Ops'
+	</script>
 </body>
 
 </html>

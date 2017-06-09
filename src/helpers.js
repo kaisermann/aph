@@ -1,5 +1,16 @@
 import { protoCache, querySelector } from './shared'
 
+export function extendElementProp (base, key, prop, irrelevantCb) {
+  if (prop instanceof Function) {
+    base[key] = function () {
+      const args = arguments
+      const sum = this.map(item => item[key].apply(item, args))
+      return isRelevantCollection(sum) ? sum : irrelevantCb(sum, this)
+    }
+  } else {
+    propGetSetWithProp(base, key)
+  }
+}
 // Sets the set/get methods of a property as the Apheleia.prop method
 export function propGetSetWithProp (obj, key) {
   Object.defineProperty(obj, key, {
@@ -45,13 +56,17 @@ export function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
+let documentFragment
 export function aphParseElements (strOrCollectionOrElem, ctx) {
   // If string passed
   if (isStr(strOrCollectionOrElem)) {
-    const isCreationStr = /<(\w*)\/?>/.exec(strOrCollectionOrElem)
     // If creation string, create the element
-    if (isCreationStr) {
-      return [document.createElement(isCreationStr[1])]
+    if (/<.+>/.test(strOrCollectionOrElem)) {
+      if (!documentFragment) {
+        documentFragment = document.implementation.createHTMLDocument()
+      }
+      documentFragment.body.innerHTML = strOrCollectionOrElem
+      return documentFragment.body.childNodes
     }
     // If not a creation string, let's search for the elements
     return querySelector(strOrCollectionOrElem, ctx)

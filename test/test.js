@@ -1,3 +1,8 @@
+/*
+  The test cases listed below are functional but do not cover all functionalities of the script.
+  TO-DO: Test cases for the new version.
+*/
+
 /* global describe, it */
 require('jsdom-global')()
 const { assert } = require('chai')

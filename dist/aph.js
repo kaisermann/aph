@@ -4,6 +4,7 @@
 	(global.aph = factory());
 }(this, (function () { 'use strict';
 
+// Sets the set/get methods of a property as the Apheleia.prop method
 function propGetSetWithProp (obj, key) {
   Object.defineProperty(obj, key, {
     get: function get () {
@@ -48,13 +49,17 @@ function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
+var documentFragment;
 function aphParseElements (strOrCollectionOrElem, ctx) {
   // If string passed
   if (isStr(strOrCollectionOrElem)) {
-    var isCreationStr = /<(\w*)\/?>/.exec(strOrCollectionOrElem);
     // If creation string, create the element
-    if (isCreationStr) {
-      return [document.createElement(isCreationStr[1])]
+    if (/<.+>/.test(strOrCollectionOrElem)) {
+      if (!documentFragment) {
+        documentFragment = document.implementation.createHTMLDocument();
+      }
+      documentFragment.body.innerHTML = strOrCollectionOrElem;
+      return documentFragment.body.childNodes
     }
     // If not a creation string, let's search for the elements
     return querySelector(strOrCollectionOrElem, ctx)
@@ -84,6 +89,8 @@ function aphParseElements (strOrCollectionOrElem, ctx) {
 var protoCache = {
   Array: Array.prototype,
 };
+
+var protoPropsCache = {};
 
 function querySelector (selector, ctx) {
   ctx = aphParseContext(ctx);
@@ -121,31 +128,34 @@ function flatWrap (what, owner) {
       }
     } else {
       var constructorName = what[0].constructor.name;
+      var aphPrototype = protoCache.Apheleia;
 
-      what.prop = protoCache.Apheleia.prop;
-      what.call = protoCache.Apheleia.call;
+      what.prop = aphPrototype.prop;
+      what.call = aphPrototype.call;
+      what.map = aphPrototype.map;
+      what.forEach = aphPrototype.forEach;
       what.owner = owner;
 
       if (!protoCache[constructorName]) {
         protoCache[constructorName] = Object.getPrototypeOf(what[0]);
       }
 
+      if (!protoPropsCache[constructorName]) {
+        protoPropsCache[constructorName] = Object.getOwnPropertyNames(
+          protoCache[constructorName]
+        );
+      }
+
       // Let's get all methods of this instance and wrap them
-      Object.getOwnPropertyNames(protoCache[constructorName]).forEach(function (key) {
+      protoPropsCache[constructorName].forEach(function (key) {
         if (what[key] == null) {
           try {
             if (protoCache[constructorName][key] instanceof Function) {
               what[key] = function () {
-                var arguments$1 = arguments;
-
-                var result = this.map(function (i) {
-                  return protoCache[constructorName][key].apply(i, arguments$1)
-                });
-                // Return the Apheleia Owner
-                // if the result is a list of undefined
-                return isRelevantCollection(result)
-                  ? result
-                  : owner
+                var args = arguments;
+                var result = this.map(function (i) { return protoCache[constructorName][key].apply(i, args); }
+                );
+                return isRelevantCollection(result) ? result : this.owner
               };
             } else {
               propGetSetWithProp(what, key);
@@ -156,11 +166,6 @@ function flatWrap (what, owner) {
           }
         }
       });
-
-      if (what.length != null) {
-        what.map = protoCache.Apheleia.map;
-        what.forEach = protoCache.Apheleia.forEach;
-      }
 
       return what
     }
@@ -230,7 +235,7 @@ Apheleia.prototype.find = function find (selector) {
 
 // Gets the specified element or the whole array if no index was defined
 Apheleia.prototype.get = function get (index) {
-  return +index === index ? this[index] : flatWrap(this)
+  return +index === index ? this[index] : slice(this)
 };
 
 // Node property manipulation method
@@ -358,7 +363,7 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 
 // Extending default HTMLElement methods and properties
 var baseElement = document.createElement('div');
-function extendElementProp (prop) {
+function extendElementProp$$1 (prop) {
   if (!protoCache.Apheleia[prop]) {
     if (baseElement[prop] instanceof Function) {
       protoCache.Apheleia[prop] = function () {
@@ -371,7 +376,7 @@ function extendElementProp (prop) {
 }
 
 for (var prop in baseElement) {
-  extendElementProp(prop);
+  extendElementProp$$1(prop);
 }
 baseElement = null;
 

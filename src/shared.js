@@ -1,9 +1,16 @@
 import Apheleia from './Apheleia.js'
-import { propGetSetWithProp, slice, aphParseContext, isRelevantCollection } from './helpers.js'
+import {
+  propGetSetWithProp,
+  slice,
+  aphParseContext,
+  isRelevantCollection,
+} from './helpers.js'
 
 export const protoCache = {
   Array: Array.prototype,
 }
+
+export const protoPropsCache = {}
 
 export function querySelector (selector, ctx) {
   ctx = aphParseContext(ctx)
@@ -41,29 +48,35 @@ export function flatWrap (what, owner) {
       }
     } else {
       const constructorName = what[0].constructor.name
+      const aphPrototype = protoCache.Apheleia
 
-      what.prop = protoCache.Apheleia.prop
-      what.call = protoCache.Apheleia.call
+      what.prop = aphPrototype.prop
+      what.call = aphPrototype.call
+      what.map = aphPrototype.map
+      what.forEach = aphPrototype.forEach
       what.owner = owner
 
       if (!protoCache[constructorName]) {
         protoCache[constructorName] = Object.getPrototypeOf(what[0])
       }
 
+      if (!protoPropsCache[constructorName]) {
+        protoPropsCache[constructorName] = Object.getOwnPropertyNames(
+          protoCache[constructorName]
+        )
+      }
+
       // Let's get all methods of this instance and wrap them
-      Object.getOwnPropertyNames(protoCache[constructorName]).forEach(key => {
+      protoPropsCache[constructorName].forEach(key => {
         if (what[key] == null) {
           try {
             if (protoCache[constructorName][key] instanceof Function) {
               what[key] = function () {
-                const result = this.map(i => {
-                  return protoCache[constructorName][key].apply(i, arguments)
-                })
-                // Return the Apheleia Owner
-                // if the result is a list of undefined
-                return isRelevantCollection(result)
-                  ? result
-                  : owner
+                const args = arguments
+                const result = this.map(i =>
+                  protoCache[constructorName][key].apply(i, args)
+                )
+                return isRelevantCollection(result) ? result : this.owner
               }
             } else {
               propGetSetWithProp(what, key)
@@ -74,11 +87,6 @@ export function flatWrap (what, owner) {
           }
         }
       })
-
-      if (what.length != null) {
-        what.map = protoCache.Apheleia.map
-        what.forEach = protoCache.Apheleia.forEach
-      }
 
       return what
     }

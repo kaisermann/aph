@@ -15,13 +15,17 @@ Yep, you read it right. Almost like Vanilla JS.
 <html>
   <body>
     <span></span>
+    <span></span>
+    <span></span>
   </body>
   <script>
     // Behooooold
     aph('span')
-      .classList.add('test-class')
-      .setAttribute('id', 'test-id')
-      .style.setProperty('color', 'red')
+      .classList
+        .add('test-class')
+      .setAttribute('custom-attr', 'test-attr')
+      .style
+        .setProperty('color', 'red')
       .textContent = 'Ops'
   </script>
 </html>
@@ -30,7 +34,13 @@ Yep, you read it right. Almost like Vanilla JS.
 **Result:**
 ```html
 ...
-  <span style="color: red" class="test-class" id="test-id">
+  <span style="color: red" class="test-class" custom-attr="test-attr">
+    Ops
+  </span>
+  <span style="color: red" class="test-class" custom-attr="test-attr">
+    Ops
+  </span>
+  <span style="color: red" class="test-class" custom-attr="test-attr">
     Ops
   </span>
 ...
@@ -39,8 +49,6 @@ Yep, you read it right. Almost like Vanilla JS.
 <p align="center">
   <img src="./misc/gladiator.gif">
 </p>
-
-#### [Go check the Documentation!](https://github.com/kaisermann/aph/wiki)
 
 ### Support
 * Chrome >= 28
@@ -54,4 +62,5 @@ Yep, you read it right. Almost like Vanilla JS.
 
 
 ### Credits and inspirations
+* ['Cash'](https://github.com/kenwheeler/cash/)
 * ['NodeList.js'](https://github.com/eorroe/NodeList.js)
