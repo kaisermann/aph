@@ -3,6 +3,7 @@ import {
   isArrayLike,
   slice,
   createElement,
+  isRelevantCollection,
   aphParseContext,
   aphParseElements,
 } from './helpers.js'
@@ -20,6 +21,12 @@ export default class Apheleia {
       len--; // Ends loop when reaches 0
       this[len] = list[len] // Builds the array-like structure
     );
+  }
+
+  call (fn) {
+    const args = slice(arguments, 1)
+    const result = this.map((elem, result) => elem[fn].apply(elem, args))
+    return isRelevantCollection(result) ? result : this
   }
 
   // Iterates through the elements with a 'callback(element, index)''

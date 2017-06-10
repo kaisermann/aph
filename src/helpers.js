@@ -26,10 +26,10 @@ export function aphParseContext (elemOrAphOrStr) {
   return elemOrAphOrStr instanceof Node
     ? elemOrAphOrStr // If already a html element
     : isStr(elemOrAphOrStr)
-        ? querySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
-        : isArrayLike(elemOrAphOrStr)
-            ? elemOrAphOrStr[0] // If already an collection
-            : document // Return the document.
+      ? querySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
+      : isArrayLike(elemOrAphOrStr)
+        ? elemOrAphOrStr[0] // If already an collection
+        : document // Return the document.
 }
 
 // Parses the elements passed to aph()
@@ -73,10 +73,8 @@ const methodCache = {}
 export function assignMethodsAndProperties (
   what,
   propCollection,
-  undefinedResultCallback,
-  ignoreList
+  undefinedResultCallback
 ) {
-  ignoreList = ignoreList || []
   const typeBeingDealtWith = propCollection.constructor.name
 
   // If the wrapped methods cache doesn't exist for this variable type
@@ -86,7 +84,7 @@ export function assignMethodsAndProperties (
   }
 
   function setProp (collection, key) {
-    if (what[key] == null && !~ignoreList.indexOf(key)) {
+    if (what[key] == null) {
       try {
         if (collection[key] instanceof Function) {
           if (!methodCache[typeBeingDealtWith][key]) {
@@ -132,14 +130,16 @@ export function assignMethodsAndProperties (
   }
 
   // Let's get the methods first
-  const proto = Object.getPrototypeOf(propCollection)
-  Object.getOwnPropertyNames(proto).forEach(function (methodName) {
-    setProp(proto, methodName)
+  const curPrototype = Object.getPrototypeOf(propCollection)
+  const prototypeKeys = {}
+  Object.getOwnPropertyNames(curPrototype).forEach(function (methodName) {
+    setProp(curPrototype, methodName)
+    prototypeKeys[methodName] = 1
   })
 
   // And now the properties
   for (let key in propCollection) {
-    if (isNaN(key)) {
+    if (isNaN(key) && !prototypeKeys[key]) {
       setProp(propCollection, key)
     }
   }

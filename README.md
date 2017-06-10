@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (**1638 bytes** minified and gzipped), easy-to-use DOM manipulation library.
+A very lightweight (**1654 bytes** minified and gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -20,20 +20,20 @@ Yep, you read it right. Almost like Vanilla JS.
     <span></span>
   </body>
   <script>
-  // Behooooold
-      aph('span')
-        .classList.add('test-class')
-        .setAttribute('custom-attr', 'test-attr')
-        .setAttribute({
-            'custom-attr-2': 'test-attr-2',
-            'custom-attr-3': 'test-attr-3'
-        })
-        .style.setProperty({
-            color: 'red',
-            background: 'pink',
-            padding: 10
-        })
-        .textContent = 'Ooooops'
+    // Behooooold
+    aph('span')
+      .classList.add('test-class')
+      .setAttribute('custom-attr', 'test-attr')
+      .setAttribute({
+          'custom-attr-2': 'test-attr-2',
+          'custom-attr-3': 'test-attr-3'
+      })
+      .style.setProperty({
+          color: 'red',
+          background: 'pink',
+          padding: 10
+      })
+      .textContent = 'Ooooops'
   </script>
 </html>
 ```

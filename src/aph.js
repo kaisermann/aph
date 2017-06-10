@@ -40,6 +40,5 @@ Object.getOwnPropertyNames(arrayProto).forEach(key => {
 assignMethodsAndProperties(
   aph.fn,
   document.createElement('div'),
-  instance => instance,
-  ['remove']
+  instance => instance
 )

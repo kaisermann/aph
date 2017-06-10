@@ -14,8 +14,8 @@ function querySelector (selector, ctx) {
         /^\.[\w-]*$/.test(selector) // if .class
           ? ctx.getElementsByClassName(selector.slice(1))
           : /^\w+$/.test(selector) // if tag (a, span, div, ...)
-              ? ctx.getElementsByTagName(selector)
-              : ctx.querySelectorAll(selector) // anything else
+            ? ctx.getElementsByTagName(selector)
+            : ctx.querySelectorAll(selector) // anything else
       )
 }
 
@@ -23,65 +23,59 @@ function aphSetWrapper () {
   Apheleia.prototype.set.apply(this, arguments);
   return this.aph.owner
 }
+
 function flatWrap (what, owner) {
   var acc = [];
+
   for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
     item = what[i];
-    if (item != null) {
-      if (item instanceof Node) {
-        // If we received a single node
-        if (!~acc.indexOf(item)) {
-          acc.push(item);
-        }
-      } else if (
-        item instanceof NodeList ||
-        item instanceof HTMLCollection ||
-        item instanceof Apheleia ||
-        (item instanceof Array && item[0] instanceof Node)
-      ) {
-        // If we received a node list/collection
-        for (var j = 0, len2 = item.length; j < len2; j++) {
-          if (!~acc.indexOf(item[j])) {
-            acc.push(item[j]);
-          }
-        }
-      } else {
-        var sampleEntry = (void 0);
-        // Iterate through the result to find a non-null value
-        for (
-          var counter = 0;
-          sampleEntry == null && counter < what.length;
-          sampleEntry = what[counter++]
-        ){  }
+    if (item == null) { continue }
 
-        var methodsToBeCopied = ['map', 'filter', 'forEach', 'get'];
-        methodsToBeCopied.forEach(function (key) {
-          what[key] = Apheleia.prototype[key];
-        });
-        what.set = aphSetWrapper;
-        what.aph = { owner: owner };
-
-        // If we're dealing with objects, let's iterate through it's methods
-        // If not, we're dealing with primitibe types and
-        // we should use it's prototype instead
-        assignMethodsAndProperties(
-          what,
-          sampleEntry,
-          function (instance) { return instance.aph.owner; }
-        );
-
-        return what
+    if (item instanceof Node) {
+      // If we received a single node
+      if (!~acc.indexOf(item)) {
+        acc.push(item);
       }
+    } else if (
+      item instanceof NodeList ||
+      item instanceof HTMLCollection ||
+      item instanceof Apheleia ||
+      (item instanceof Array && item[0] instanceof Node)
+    ) {
+      // If we received a node list/collection
+      for (var j = 0, len2 = item.length; j < len2; j++) {
+        if (!~acc.indexOf(item[j])) {
+          acc.push(item[j]);
+        }
+      }
+    } else {
+      var sampleEntry = (void 0);
+      // Iterate through the result to find a non-null value
+      for (var counter = 0; sampleEntry == null; sampleEntry = what[counter++]){  }
+
+      var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call'];
+      methodsToBeCopied.forEach(function (key) {
+        what[key] = Apheleia.prototype[key];
+      });
+      what.set = aphSetWrapper;
+      what.aph = { owner: owner };
+
+      // If we're dealing with objects, let's iterate through it's methods
+      // If not, we're dealing with primitibe types and
+      // we should use it's prototype instead
+      assignMethodsAndProperties(
+        what,
+        sampleEntry,
+        function (instance) { return instance.aph.owner; }
+      );
+
+      return what
     }
   }
-  return new Apheleia(
-    acc,
-    owner.aph && owner.aph.context ? owner.aph.context : null,
-    { owner: owner }
-  )
+
+  return new Apheleia(acc, owner.aph.context, { owner: owner })
 }
 
-// Check if what's passed is a string
 function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
@@ -107,10 +101,10 @@ function aphParseContext (elemOrAphOrStr) {
   return elemOrAphOrStr instanceof Node
     ? elemOrAphOrStr // If already a html element
     : isStr(elemOrAphOrStr)
-        ? querySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
-        : isArrayLike(elemOrAphOrStr)
-            ? elemOrAphOrStr[0] // If already an collection
-            : document // Return the document.
+      ? querySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
+      : isArrayLike(elemOrAphOrStr)
+        ? elemOrAphOrStr[0] // If already an collection
+        : document // Return the document.
 }
 
 // Parses the elements passed to aph()
@@ -154,10 +148,8 @@ var methodCache = {};
 function assignMethodsAndProperties (
   what,
   propCollection,
-  undefinedResultCallback,
-  ignoreList
+  undefinedResultCallback
 ) {
-  ignoreList = ignoreList || [];
   var typeBeingDealtWith = propCollection.constructor.name;
 
   // If the wrapped methods cache doesn't exist for this variable type
@@ -167,7 +159,7 @@ function assignMethodsAndProperties (
   }
 
   function setProp (collection, key) {
-    if (what[key] == null && !~ignoreList.indexOf(key)) {
+    if (what[key] == null) {
       try {
         if (collection[key] instanceof Function) {
           if (!methodCache[typeBeingDealtWith][key]) {
@@ -213,14 +205,16 @@ function assignMethodsAndProperties (
   }
 
   // Let's get the methods first
-  var proto = Object.getPrototypeOf(propCollection);
-  Object.getOwnPropertyNames(proto).forEach(function (methodName) {
-    setProp(proto, methodName);
+  var curPrototype = Object.getPrototypeOf(propCollection);
+  var prototypeKeys = {};
+  Object.getOwnPropertyNames(curPrototype).forEach(function (methodName) {
+    setProp(curPrototype, methodName);
+    prototypeKeys[methodName] = 1;
   });
 
   // And now the properties
   for (var key in propCollection) {
-    if (isNaN(key)) {
+    if (isNaN(key) && !prototypeKeys[key]) {
       setProp(propCollection, key);
     }
   }
@@ -250,6 +244,12 @@ var Apheleia = function Apheleia (elems, context, aphMetaObj) {
     len--; // Ends loop when reaches 0
     this[len] = list[len] // Builds the array-like structure
   ){  }
+};
+
+Apheleia.prototype.call = function call (fn) {
+  var args = slice(arguments, 1);
+  var result = this.map(function (elem, result) { return elem[fn].apply(elem, args); });
+  return isRelevantCollection(result) ? result : this
 };
 
 // Iterates through the elements with a 'callback(element, index)''
@@ -422,8 +422,7 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 assignMethodsAndProperties(
   aph.fn,
   document.createElement('div'),
-  function (instance) { return instance; },
-  ['remove']
+  function (instance) { return instance; }
 );
 
 return aph;
