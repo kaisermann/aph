@@ -69,23 +69,10 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
   return []
 }
 
-// Sets the set/get methods of a property as the Apheleia.prop method
-function propGetSetWithProp (obj, key) {
-  Object.defineProperty(obj, key, {
-    get () {
-      return this.get(key)
-    },
-    set (value) {
-      this.set(key, value)
-    },
-  })
-}
-
 const methodCache = {}
 export function assignMethodsAndProperties (
   what,
   propCollection,
-  usePrototype,
   undefinedResultCallback,
   ignoreList
 ) {
@@ -98,10 +85,10 @@ export function assignMethodsAndProperties (
     methodCache[typeBeingDealtWith] = {}
   }
 
-  function innerFunction (key) {
+  function setProp (collection, key) {
     if (what[key] == null && !~ignoreList.indexOf(key)) {
       try {
-        if (propCollection[key] instanceof Function) {
+        if (collection[key] instanceof Function) {
           if (!methodCache[typeBeingDealtWith][key]) {
             methodCache[typeBeingDealtWith][key] = function () {
               const args = arguments
@@ -110,21 +97,24 @@ export function assignMethodsAndProperties (
               // we assume we're dealing with a set method.
               // Therefore, we make a method call for each object entry
               if (
-                /^set/i.test(key) && // if method starts with .set
-                key.slice(-1) !== 's' && // and doesn't end with an s (maybe it already accepts more than one definition)
+                /^set/i.test(key) && // if method starts with 'set'
+                key.slice(-1) !== 's' && // and doesn't end with an 's'
                 args.length === 1 && // and there's only one argument (object with pair of property keys and values)
                 args[0].constructor === Object // and the argument is a plain object
               ) {
                 // We return nothing as this is a 'set' method call
-                this.forEach(item => {
-                  for (const objKey in args[0]) {
-                    propCollection[key].call(item, objKey, args[0][objKey])
-                  }
-                })
-                return undefinedResultCallback(this)
+
+                return undefinedResultCallback(
+                  // this.forEach returns 'this'
+                  this.forEach(item => {
+                    for (const objKey in args[0]) {
+                      collection[key].call(item, objKey, args[0][objKey])
+                    }
+                  })
+                )
               }
 
-              const result = this.map(i => propCollection[key].apply(i, args))
+              const result = this.map(i => collection[key].apply(i, args))
               return isRelevantCollection(result)
                 ? result
                 : undefinedResultCallback(this)
@@ -141,12 +131,28 @@ export function assignMethodsAndProperties (
     }
   }
 
-  if (usePrototype) {
-    propCollection = Object.getPrototypeOf(propCollection)
-    Object.getOwnPropertyNames(propCollection).forEach(innerFunction)
-  } else {
-    for (let key in propCollection) {
-      innerFunction(key)
+  // Let's get the methods first
+  const proto = Object.getPrototypeOf(propCollection)
+  Object.getOwnPropertyNames(proto).forEach(function (methodName) {
+    setProp(proto, methodName)
+  })
+
+  // And now the properties
+  for (let key in propCollection) {
+    if (isNaN(key)) {
+      setProp(propCollection, key)
     }
   }
+}
+
+// Sets the set/get methods of a property as the Apheleia.prop method
+export function propGetSetWithProp (obj, key) {
+  Object.defineProperty(obj, key, {
+    get () {
+      return this.get(key)
+    },
+    set (value) {
+      this.set(key, value)
+    },
+  })
 }

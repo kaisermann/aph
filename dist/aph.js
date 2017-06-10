@@ -19,7 +19,7 @@ function querySelector (selector, ctx) {
       )
 }
 
-function fakeSet () {
+function aphSetWrapper () {
   Apheleia.prototype.set.apply(this, arguments);
   return this.aph.owner
 }
@@ -58,7 +58,7 @@ function flatWrap (what, owner) {
         methodsToBeCopied.forEach(function (key) {
           what[key] = Apheleia.prototype[key];
         });
-        what.set = fakeSet;
+        what.set = aphSetWrapper;
         what.aph = { owner: owner };
 
         // If we're dealing with objects, let's iterate through it's methods
@@ -67,7 +67,6 @@ function flatWrap (what, owner) {
         assignMethodsAndProperties(
           what,
           sampleEntry,
-          true,
           function (instance) { return instance.aph.owner; }
         );
 
@@ -75,8 +74,11 @@ function flatWrap (what, owner) {
       }
     }
   }
-
-  return new Apheleia(acc, owner.aph.context, { owner: owner })
+  return new Apheleia(
+    acc,
+    owner.aph && owner.aph.context ? owner.aph.context : null,
+    { owner: owner }
+  )
 }
 
 // Check if what's passed is a string
@@ -148,23 +150,10 @@ function aphParseElements (strOrCollectionOrElem, ctx) {
   return []
 }
 
-// Sets the set/get methods of a property as the Apheleia.prop method
-function propGetSetWithProp (obj, key) {
-  Object.defineProperty(obj, key, {
-    get: function get () {
-      return this.get(key)
-    },
-    set: function set (value) {
-      this.set(key, value);
-    },
-  });
-}
-
 var methodCache = {};
 function assignMethodsAndProperties (
   what,
   propCollection,
-  usePrototype,
   undefinedResultCallback,
   ignoreList
 ) {
@@ -177,10 +166,10 @@ function assignMethodsAndProperties (
     methodCache[typeBeingDealtWith] = {};
   }
 
-  function innerFunction (key) {
+  function setProp (collection, key) {
     if (what[key] == null && !~ignoreList.indexOf(key)) {
       try {
-        if (propCollection[key] instanceof Function) {
+        if (collection[key] instanceof Function) {
           if (!methodCache[typeBeingDealtWith][key]) {
             methodCache[typeBeingDealtWith][key] = function () {
               var args = arguments;
@@ -189,21 +178,24 @@ function assignMethodsAndProperties (
               // we assume we're dealing with a set method.
               // Therefore, we make a method call for each object entry
               if (
-                /^set/i.test(key) && // if method starts with .set
-                key.slice(-1) !== 's' && // and doesn't end with an s (maybe it already accepts more than one definition)
+                /^set/i.test(key) && // if method starts with 'set'
+                key.slice(-1) !== 's' && // and doesn't end with an 's'
                 args.length === 1 && // and there's only one argument (object with pair of property keys and values)
                 args[0].constructor === Object // and the argument is a plain object
               ) {
                 // We return nothing as this is a 'set' method call
-                this.forEach(function (item) {
-                  for (var objKey in args[0]) {
-                    propCollection[key].call(item, objKey, args[0][objKey]);
-                  }
-                });
-                return undefinedResultCallback(this)
+
+                return undefinedResultCallback(
+                  // this.forEach returns 'this'
+                  this.forEach(function (item) {
+                    for (var objKey in args[0]) {
+                      collection[key].call(item, objKey, args[0][objKey]);
+                    }
+                  })
+                )
               }
 
-              var result = this.map(function (i) { return propCollection[key].apply(i, args); });
+              var result = this.map(function (i) { return collection[key].apply(i, args); });
               return isRelevantCollection(result)
                 ? result
                 : undefinedResultCallback(this)
@@ -220,14 +212,30 @@ function assignMethodsAndProperties (
     }
   }
 
-  if (usePrototype) {
-    propCollection = Object.getPrototypeOf(propCollection);
-    Object.getOwnPropertyNames(propCollection).forEach(innerFunction);
-  } else {
-    for (var key in propCollection) {
-      innerFunction(key);
+  // Let's get the methods first
+  var proto = Object.getPrototypeOf(propCollection);
+  Object.getOwnPropertyNames(proto).forEach(function (methodName) {
+    setProp(proto, methodName);
+  });
+
+  // And now the properties
+  for (var key in propCollection) {
+    if (isNaN(key)) {
+      setProp(propCollection, key);
     }
   }
+}
+
+// Sets the set/get methods of a property as the Apheleia.prop method
+function propGetSetWithProp (obj, key) {
+  Object.defineProperty(obj, key, {
+    get: function get () {
+      return this.get(key)
+    },
+    set: function set (value) {
+      this.set(key, value);
+    },
+  });
 }
 
 var Apheleia = function Apheleia (elems, context, aphMetaObj) {
@@ -414,7 +422,6 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 assignMethodsAndProperties(
   aph.fn,
   document.createElement('div'),
-  false,
   function (instance) { return instance; },
   ['remove']
 );
