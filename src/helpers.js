@@ -69,43 +69,68 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
   return []
 }
 
+// Sets the set/get methods of a property as the Apheleia.prop method
+function propGetSetWithProp (obj, key) {
+  Object.defineProperty(obj, key, {
+    get () {
+      return this.get(key)
+    },
+    set (value) {
+      this.set(key, value)
+    },
+  })
+}
+
+const methodCache = {}
 export function assignMethodsAndProperties (
   what,
   propCollection,
+  usePrototype,
   undefinedResultCallback,
   ignoreList
 ) {
   ignoreList = ignoreList || []
+  const typeBeingDealtWith = propCollection.constructor.name
+
+  // If the wrapped methods cache doesn't exist for this variable type
+  // Let's create it
+  if (!methodCache[typeBeingDealtWith]) {
+    methodCache[typeBeingDealtWith] = {}
+  }
+
   function innerFunction (key) {
     if (what[key] == null && !~ignoreList.indexOf(key)) {
       try {
         if (propCollection[key] instanceof Function) {
-          what[key] = function () {
-            const args = arguments
-            let result
-            // If the method name begins with 'set' and
-            // there's only one argument and it's a plain object
-            // we assume we're dealing with a set method.
-            // Therefore, we make a method call for each object entry
-            if (
-              /^set/i.test(key) &&
-              args.length === 1 &&
-              args[0].constructor === Object
-            ) {
-              result = this.map(i => {
-                for (let objKey in args[0]) {
-                  propCollection[key].call(i, objKey, args[0][objKey])
-                }
-                // implicit 'return undefined'
+          if (!methodCache[typeBeingDealtWith][key]) {
+            methodCache[typeBeingDealtWith][key] = function () {
+              const args = arguments
+              // If the method name begins with 'set' and
+              // there's only one argument and it's a plain object
+              // we assume we're dealing with a set method.
+              // Therefore, we make a method call for each object entry
+              if (
+                /^set/i.test(key) && // if method starts with .set
+                key.slice(-1) !== 's' && // and doesn't end with an s (maybe it already accepts more than one definition)
+                args.length === 1 && // and there's only one argument (object with pair of property keys and values)
+                args[0].constructor === Object // and the argument is a plain object
+              ) {
                 // We return nothing as this is a 'set' method call
-              })
-            } else {
-              result = this.map(i => propCollection[key].apply(i, args))
+                this.forEach(item => {
+                  for (const objKey in args[0]) {
+                    propCollection[key].call(item, objKey, args[0][objKey])
+                  }
+                })
+                return undefinedResultCallback(this)
+              }
+
+              const result = this.map(i => propCollection[key].apply(i, args))
+              return isRelevantCollection(result)
+                ? result
+                : undefinedResultCallback(this)
             }
-            return isRelevantCollection(result)
-              ? result
-              : undefinedResultCallback ? undefinedResultCallback(this) : this
           }
+          what[key] = methodCache[typeBeingDealtWith][key]
         } else {
           propGetSetWithProp(what, key)
         }
@@ -116,29 +141,12 @@ export function assignMethodsAndProperties (
     }
   }
 
-  // For some reason for-in loops with primitive prototypes doesn't work
-  // So... If we're dealing with a primitive type, let's get it's prototype
-  // And iterate with a Object.getOwnPropertyNames().forEach()
-  if (typeof propCollection !== 'object') {
+  if (usePrototype) {
     propCollection = Object.getPrototypeOf(propCollection)
     Object.getOwnPropertyNames(propCollection).forEach(innerFunction)
   } else {
-    // If we're dealing with objects, let's iterate through it's properties
-    // With a for-in loop
     for (let key in propCollection) {
       innerFunction(key)
     }
   }
-}
-
-// Sets the set/get methods of a property as the Apheleia.prop method
-export function propGetSetWithProp (obj, key) {
-  Object.defineProperty(obj, key, {
-    get () {
-      return this.get(key)
-    },
-    set (value) {
-      this.set(key, value)
-    },
-  })
 }

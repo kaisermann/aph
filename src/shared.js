@@ -20,6 +20,10 @@ export function querySelector (selector, ctx) {
       )
 }
 
+function fakeSet () {
+  Apheleia.prototype.set.apply(this, arguments)
+  return this.aph.owner
+}
 export function flatWrap (what, owner) {
   let acc = []
   for (let i = 0, len = what.length, item; i < len; i++) {
@@ -55,10 +59,7 @@ export function flatWrap (what, owner) {
         methodsToBeCopied.forEach(function (key) {
           what[key] = Apheleia.prototype[key]
         })
-        what.set = function () {
-          Apheleia.prototype.set.apply(this, arguments)
-          return this.aph.owner
-        }
+        what.set = fakeSet
         what.aph = { owner: owner }
 
         // If we're dealing with objects, let's iterate through it's methods
@@ -67,6 +68,7 @@ export function flatWrap (what, owner) {
         assignMethodsAndProperties(
           what,
           sampleEntry,
+          true,
           instance => instance.aph.owner
         )
 
