@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (**1674 bytes** minified and gzipped), easy-to-use DOM manipulation library.
+A very lightweight (4.45 kbs minified and **1.6 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -42,13 +42,13 @@ Yep, you read it right. Almost like Vanilla JS.
 
 ```html
 ...
-  <span style="color: red; font-size: 18px; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
     Ooooops
   </span>
-  <span style="color: red; font-size: 18px; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
     Ooooops
   </span>
-  <span style="color: red; font-size: 18px; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
     Ooooops
   </span>
 ...
@@ -93,9 +93,6 @@ aph('div').setAttribute({
 All Apheleia Collection or Wrapper have these default methods:
 
 ```js
-// Returns an Apheleia Wrapper of its nodes styles
-aph('div').style
-
 // Iterates through all items on the colleciton
 // Can 'return false' to break
 aph('div').style.forEach()
@@ -124,11 +121,11 @@ Properties not available in `HTMLElement`, such as `href` on `<a>` elements, can
 
 ### But... what about performance?
 
-As you could guess it, for you to be able to write code as I showed you up there, `aph` must do some heavy lifting behind the curtains. I have done/am doing my best to cache results and improve performance where I can. This is something you decide for yourself.
+As you could guess it, for you to be able to write code as I showed you up there, `aph` must do some heavy lifting behind the curtains. I have done/am doing my best to cache results and improve performance where I can. This is a trade-off you have to decide for yourself.
 
-Wanna see benchmarks? I'm gonna make them some day.
+Wanna see benchmarks? When I have some free time I'm gonna make them!
 <br>
-Have some benchmarks for me? I'll be more than thankful!
+Have some benchmarks to show me? I'll be more than thankful!
 <br>
 Have some suggestions or critics? Talk to me!
 
@@ -136,14 +133,17 @@ Have some suggestions or critics? Talk to me!
 
 ## Support
 
-- Chrome >= 28
-- Edge >= 12
-- Firefox >= 26
-- Firefox for Android 49
-- IE >= 10
-- iOS Safari >= 7.0
-- Opera >= 15
-- Safari >= 7
+- Chrome 13+
+- Firefox 4+
+- IE 10+
+- Edge 12+
+- Safari 5.1+
+- Opera 12+
+- Android Browser 4.4.4+
+- iOS Safari 7.0-7.1+
+- Blackberry Browser 7+
+- Chrome for Android 53+
+- Firefox for Android 49+
 
 ## Credits and inspirations
 
