@@ -29,6 +29,7 @@ const ignoreMethods = [
   'reduceRight',
   'slice',
   'splice',
+  'sort',
 ]
 
 Object.getOwnPropertyNames(arrayProto).forEach(key => {
@@ -38,8 +39,4 @@ Object.getOwnPropertyNames(arrayProto).forEach(key => {
 })
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(
-  aph.fn,
-  createElement('<div>'),
-  instance => instance
-)
+assignMethodsAndProperties(aph.fn, createElement('<div>'), instance => instance)

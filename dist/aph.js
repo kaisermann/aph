@@ -375,8 +375,8 @@ Apheleia.prototype.html = function html (children, cb) {
   for (var i = 0, len = children.length; i < len; i++) {
     if (isArrayLike(children[i])) {
       for (var j = 0, len2 = children[i].length; j < len2; j++) {
-        if (!~flatChildren.indexOf(children[j])) {
-          flatChildren.push(children[j]);
+        if (!~flatChildren.indexOf(children[i][j])) {
+          flatChildren.push(children[i][j]);
         }
       }
     } else {
@@ -418,7 +418,8 @@ var ignoreMethods = [
   'reduce',
   'reduceRight',
   'slice',
-  'splice' ];
+  'splice',
+  'sort' ];
 
 Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
   if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
@@ -427,11 +428,7 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 });
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(
-  aph.fn,
-  createElement('<div>'),
-  function (instance) { return instance; }
-);
+assignMethodsAndProperties(aph.fn, createElement('<div>'), function (instance) { return instance; });
 
 return aph;
 

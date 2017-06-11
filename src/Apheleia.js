@@ -145,8 +145,8 @@ export default class Apheleia {
     for (let i = 0, len = children.length; i < len; i++) {
       if (isArrayLike(children[i])) {
         for (let j = 0, len2 = children[i].length; j < len2; j++) {
-          if (!~flatChildren.indexOf(children[j])) {
-            flatChildren.push(children[j])
+          if (!~flatChildren.indexOf(children[i][j])) {
+            flatChildren.push(children[i][j])
           }
         }
       } else {
