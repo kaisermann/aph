@@ -69,6 +69,7 @@ function flatWrap (what, owner) {
   return new Apheleia(acc, owner.aph.context, { owner: owner })
 }
 
+// Check if what's passed is a string
 function isStr (maybeStr) {
   return '' + maybeStr === maybeStr
 }
