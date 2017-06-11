@@ -50,10 +50,6 @@ export function flatWrap (what, owner) {
         }
       }
     } else {
-      let sampleEntry
-      // Iterate through the result to find a non-null value
-      for (let counter = 0; sampleEntry == null; sampleEntry = what[counter++]);
-
       const methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call']
       methodsToBeCopied.forEach(function (key) {
         what[key] = Apheleia.prototype[key]
@@ -61,12 +57,9 @@ export function flatWrap (what, owner) {
       what.set = aphSetWrapper
       what.aph = { owner: owner }
 
-      // If we're dealing with objects, let's iterate through it's methods
-      // If not, we're dealing with primitibe types and
-      // we should use it's prototype instead
       assignMethodsAndProperties(
         what,
-        sampleEntry,
+        item,
         instance => instance.aph.owner
       )
 

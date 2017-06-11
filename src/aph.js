@@ -1,6 +1,6 @@
 import Apheleia from './Apheleia.js'
 import { arrayProto, querySelector, flatWrap } from './shared.js'
-import { assignMethodsAndProperties } from './helpers.js'
+import { assignMethodsAndProperties, createElement } from './helpers.js'
 
 export default function aph (elems, context, metaObj) {
   return new Apheleia(elems, context, metaObj)
@@ -19,7 +19,7 @@ newCollectionMethods.forEach(key => {
   }
 })
 
-// Irrelevant methods on the context of an Apheleia collection
+// Irrelevant methods on the context of an Apheleia Collection
 const ignoreMethods = [
   'concat',
   'copyWithin',
@@ -30,6 +30,7 @@ const ignoreMethods = [
   'slice',
   'splice',
 ]
+
 Object.getOwnPropertyNames(arrayProto).forEach(key => {
   if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
     aph.fn[key] = arrayProto[key]
@@ -39,6 +40,6 @@ Object.getOwnPropertyNames(arrayProto).forEach(key => {
 // Extending default HTMLElement methods and properties
 assignMethodsAndProperties(
   aph.fn,
-  document.createElement('div'),
+  createElement('<div>'),
   instance => instance
 )

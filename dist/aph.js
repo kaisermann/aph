@@ -49,10 +49,6 @@ function flatWrap (what, owner) {
         }
       }
     } else {
-      var sampleEntry = (void 0);
-      // Iterate through the result to find a non-null value
-      for (var counter = 0; sampleEntry == null; sampleEntry = what[counter++]){  }
-
       var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call'];
       methodsToBeCopied.forEach(function (key) {
         what[key] = Apheleia.prototype[key];
@@ -60,12 +56,9 @@ function flatWrap (what, owner) {
       what.set = aphSetWrapper;
       what.aph = { owner: owner };
 
-      // If we're dealing with objects, let's iterate through it's methods
-      // If not, we're dealing with primitibe types and
-      // we should use it's prototype instead
       assignMethodsAndProperties(
         what,
-        sampleEntry,
+        item,
         function (instance) { return instance.aph.owner; }
       );
 
@@ -144,7 +137,9 @@ function aphParseElements (strOrCollectionOrElem, ctx) {
   return []
 }
 
-var methodCache = {};
+var prototypeCache = {};
+var propCache = {};
+
 function assignMethodsAndProperties (
   what,
   propCollection,
@@ -154,46 +149,47 @@ function assignMethodsAndProperties (
 
   // If the wrapped methods cache doesn't exist for this variable type
   // Let's create it
-  if (!methodCache[typeBeingDealtWith]) {
-    methodCache[typeBeingDealtWith] = {};
+  if (!prototypeCache[typeBeingDealtWith]) {
+    prototypeCache[typeBeingDealtWith] = {};
   }
 
   function setProp (collection, key) {
     if (what[key] == null) {
       try {
         if (collection[key] instanceof Function) {
-          if (!methodCache[typeBeingDealtWith][key]) {
-            methodCache[typeBeingDealtWith][key] = function () {
-              var args = arguments;
-              // If the method name begins with 'set' and
-              // there's only one argument and it's a plain object
-              // we assume we're dealing with a set method.
-              // Therefore, we make a method call for each object entry
-              if (
-                /^set/i.test(key) && // if method starts with 'set'
-                key.slice(-1) !== 's' && // and doesn't end with an 's'
-                args.length === 1 && // and there's only one argument (object with pair of property keys and values)
-                args[0].constructor === Object // and the argument is a plain object
-              ) {
-                // We return nothing as this is a 'set' method call
+          if (!prototypeCache[typeBeingDealtWith][key]) {
+            // Let's cache the wrapper function
+            // If we're dealing with a set method,
+            // should allow to pass a object as parameter
+            prototypeCache[typeBeingDealtWith][key] = /^set/i.test(key) &&
+              key.slice(-1) !== 's'
+              ? function () {
+                var args = arguments;
+                if (args.length === 1 && args[0].constructor === Object) {
+                  return undefinedResultCallback(
+                      // this.forEach returns 'this'
+                      this.forEach(function (item) {
+                        for (var objKey in args[0]) {
+                          collection[key].call(item, objKey, args[0][objKey]);
+                        }
+                      })
+                    )
+                }
 
-                return undefinedResultCallback(
-                  // this.forEach returns 'this'
-                  this.forEach(function (item) {
-                    for (var objKey in args[0]) {
-                      collection[key].call(item, objKey, args[0][objKey]);
-                    }
-                  })
-                )
+                var result = this.map(function (i) { return collection[key].apply(i, args); });
+                return isRelevantCollection(result)
+                    ? result
+                    : undefinedResultCallback(this)
               }
-
-              var result = this.map(function (i) { return collection[key].apply(i, args); });
-              return isRelevantCollection(result)
-                ? result
-                : undefinedResultCallback(this)
-            };
+              : function () {
+                var args = arguments;
+                var result = this.map(function (i) { return collection[key].apply(i, args); });
+                return isRelevantCollection(result)
+                    ? result
+                    : undefinedResultCallback(this)
+              };
           }
-          what[key] = methodCache[typeBeingDealtWith][key];
+          what[key] = prototypeCache[typeBeingDealtWith][key];
         } else {
           propGetSetWithProp(what, key);
         }
@@ -213,9 +209,20 @@ function assignMethodsAndProperties (
   });
 
   // And now the properties
-  for (var key in propCollection) {
-    if (isNaN(key) && !prototypeKeys[key]) {
-      setProp(propCollection, key);
+  // Is there already a cache for this type's properties?
+  if (!propCache[typeBeingDealtWith]) {
+    propCache[typeBeingDealtWith] = [];
+    for (var key in propCollection) {
+      if (isNaN(key) && !prototypeKeys[key]) {
+        propCache[typeBeingDealtWith].push(key);
+        setProp(propCollection, key);
+      }
+    }
+  } else {
+    // If yes, let's use the prop cache
+    // Inverse for loop, the order is not relevant here
+    for (var len = propCache[typeBeingDealtWith].length; len--;) {
+      setProp(propCollection, propCache[typeBeingDealtWith][len]);
     }
   }
 }
@@ -402,7 +409,7 @@ newCollectionMethods.forEach(function (key) {
   };
 });
 
-// Irrelevant methods on the context of an Apheleia collection
+// Irrelevant methods on the context of an Apheleia Collection
 var ignoreMethods = [
   'concat',
   'copyWithin',
@@ -412,6 +419,7 @@ var ignoreMethods = [
   'reduceRight',
   'slice',
   'splice' ];
+
 Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
   if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
     aph.fn[key] = arrayProto[key];
@@ -421,7 +429,7 @@ Object.getOwnPropertyNames(arrayProto).forEach(function (key) {
 // Extending default HTMLElement methods and properties
 assignMethodsAndProperties(
   aph.fn,
-  document.createElement('div'),
+  createElement('<div>'),
   function (instance) { return instance; }
 );
 
