@@ -4,84 +4,18 @@
 	(global.aph = factory());
 }(this, (function () { 'use strict';
 
-var arrayPrototype = Array.prototype;
-
-function aphSetWrapper () {
-  Apheleia.prototype.set.apply(this, arguments);
-  return this.aph.owner
-}
-
-function wrap (what, owner) {
-  var acc = [];
-
-  for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
-    item = what[i];
-    if (item == null) { continue }
-
-    if (item instanceof Node) {
-      // If we received a single node
-      if (!~acc.indexOf(item)) {
-        acc.push(item);
-      }
-    } else if (
-      item instanceof NodeList ||
-      item instanceof HTMLCollection ||
-      item instanceof Apheleia ||
-      (item instanceof Array && item[0] instanceof Node)
-    ) {
-      // If we received a node list/collection
-      for (var j = 0, len2 = item.length; j < len2; j++) {
-        if (!~acc.indexOf(item[j])) {
-          acc.push(item[j]);
-        }
-      }
-    } else {
-      var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call'];
-      methodsToBeCopied.forEach(function (key) {
-        what[key] = Apheleia.prototype[key];
-      });
-      what.set = aphSetWrapper;
-      what.aph = { owner: owner };
-
-      assignMethodsAndProperties(what, item, function (instance) { return instance.aph.owner; });
-
-      return what
-    }
-  }
-
-  return new Apheleia(acc, owner.aph.context, { owner: owner })
-}
-
-function profile (fn, name, nTimes) {
-  nTimes = nTimes || 1000;
-  var t0 = performance.now();
-  for (var p = 0; p < nTimes; p++) {
-    fn();
-  }
-  var t1 = performance.now();
-  return {
-    elapsed: t1 - t0,
-    name: name,
-  }
-}
-
-function test (name, arr) {
-  console.group(name);
-  arr.sort(function (a, b) { return a.elapsed > b.elapsed; }).forEach(function (item) {
-    console.log(((item.name) + " - " + (item.elapsed) + " msecs"));
-  });
-  console.groupEnd(name);
-}
-
 // Check if what's passed is a string
 function isStr (maybeStr) {
-  return typeof maybeStr === 'string' || maybeStr instanceof String
+  return typeof maybeStr === 'string'
 }
 
 // Check if what's passed is to be considered a colletion
 function isArrayLike (maybeCollection) {
   return (
-    maybeCollection && !isStr(maybeCollection) && maybeCollection.length != null
+    maybeCollection &&
+    !isStr(maybeCollection) &&
+    typeof maybeCollection !== 'function' &&
+    maybeCollection.length != null
   )
 }
 
@@ -89,22 +23,18 @@ function isRelevantCollection (collection) {
   return collection[0] != null || collection[collection.length - 1] != null
 }
 
-// Slice a array-like collection
-function slice (what, from) {
-  return arrayPrototype.slice.call(what, from || 0)
-}
-
 // Queries a selector
+var simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/;
 function querySelector (selector, ctx) {
-  return /^#[\w-]*$/.test(selector) // if #id
-    ? [window[selector.slice(1)]]
-    : slice(
-        /^\.[\w-]*$/.test(selector) // if .class
-          ? ctx.getElementsByClassName(selector.slice(1))
-          : /^\w+$/.test(selector) // if tag (a, span, div, ...)
-            ? ctx.getElementsByTagName(selector)
-            : ctx.querySelectorAll(selector) // anything else
-      )
+  var regTest = simpleSelectorPattern.exec(selector);
+  var matched;
+  return (matched = regTest[1]) // if #id
+    ? document.getElementById(matched)
+    : (matched = regTest[2]) // if tag (a, span, div, ...)
+      ? ctx.getElementsByTagName(matched)
+      : (matched = regTest[3]) // if .class
+        ? ctx.getElementsByClassName(matched)
+        : ctx.querySelectorAll(selector) // anything else
 }
 
 // Parses the passed context
@@ -126,37 +56,6 @@ function createElement (str) {
   }
   documentFragment.body.innerHTML = str;
   return documentFragment.body.childNodes[0]
-}
-
-function aphParseElements (strOrCollectionOrElem, ctx) {
-  // If string passed
-  if (isStr(strOrCollectionOrElem)) {
-    // If creation string, create the element
-    if (
-      strOrCollectionOrElem[0] === '<' &&
-      strOrCollectionOrElem[strOrCollectionOrElem.length - 1] === '>' &&
-      strOrCollectionOrElem.length >= 3
-    ) {
-      return [createElement(strOrCollectionOrElem)]
-    }
-    // If not a creation string, let's search for the elements
-    return querySelector(strOrCollectionOrElem, ctx)
-  }
-
-  // If html element / window / document passed
-  if (
-    strOrCollectionOrElem instanceof Node ||
-    strOrCollectionOrElem === window
-  ) {
-    return [strOrCollectionOrElem]
-  }
-
-  // If collection passed
-  if (isArrayLike(strOrCollectionOrElem)) {
-    return strOrCollectionOrElem
-  }
-
-  return []
 }
 
 var prototypeCache = {};
@@ -183,8 +82,8 @@ function assignMethodsAndProperties (
             // Let's cache the wrapper function
             // If we're dealing with a set method,
             // should allow to pass a object as parameter
-            prototypeCache[typeBeingDealtWith][key] = /^set/i.test(key) &&
-              key.slice(-1) !== 's'
+            prototypeCache[typeBeingDealtWith][key] = key.substr(0, 3) ===
+              'set' && key[key.length - 1] !== 's'
               ? function () {
                 var args = arguments;
                 if (args.length === 1 && args[0].constructor === Object) {
@@ -261,34 +160,82 @@ function propGetSetWithProp (obj, key) {
   });
 }
 
+var arrayPrototype = Array.prototype;
+
+function aphSetWrapper () {
+  Apheleia.prototype.set.apply(this, arguments);
+  return this.aph.owner
+}
+
+function wrap (what, owner) {
+  var acc = [];
+
+  for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
+    item = what[i];
+    if (item == null) { continue }
+
+    if (item instanceof Node) {
+      // If we received a single node
+      if (!~acc.indexOf(item)) {
+        acc.push(item);
+      }
+    } else if (
+      item instanceof NodeList ||
+      item instanceof HTMLCollection ||
+      item instanceof Apheleia ||
+      (item instanceof Array && item[0] instanceof Node)
+    ) {
+      // If we received a node list/collection
+      for (var j = 0, len2 = item.length; j < len2; j++) {
+        if (!~acc.indexOf(item[j])) {
+          acc.push(item[j]);
+        }
+      }
+    } else {
+      var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call'];
+      methodsToBeCopied.forEach(function (key) {
+        what[key] = Apheleia.prototype[key];
+      });
+      what.set = aphSetWrapper;
+      what.aph = { owner: owner };
+
+      assignMethodsAndProperties(what, item, function (instance) { return instance.aph.owner; });
+
+      return what
+    }
+  }
+
+  return new Apheleia(acc, owner.aph.context, { owner: owner })
+}
+
 var Apheleia = function Apheleia (elems, context, aphMetaObj) {
-  var this$1 = this;
-
   this.aph = aphMetaObj || {};
+  this.aph.context = context = aphParseContext(context);
 
-  test('init', [
-    profile(function () { return (this$1.aph.context = aphParseContext(context)); }, 'context'),
-    profile(
-      function () { return aphParseElements(
-          elems,
-          (this$1.aph.context = aphParseContext(context))
-        ); },
-      'elems'
-    ) ]);
+  if (isStr(elems)) {
+    // If creation string, create the element
+    elems = elems[0] === '<' &&
+      elems[elems.length - 1] === '>' &&
+      elems.length > 2
+      ? createElement(elems)
+      : querySelector(elems, context);
+  }
 
-  for (
-    var list = aphParseElements(
-      elems,
-      (this.aph.context = aphParseContext(context)) // Sets current context
-    ),
-      len = (this.length = list.length); // Sets current length
-    len--; // Ends loop when reaches 0
-    this[len] = list[len] // Builds the array-like structure
-  ){  }
+  if (!elems) { return this }
+  if (elems.nodeType || elems === window) {
+    this[0] = elems;
+    this.length = 1;
+  } else {
+    for (
+      var len = (this.length = elems.length); // Sets current length
+      len--; // Ends loop when reaches 0
+      this[len] = elems[len] // Builds the array-like structure
+    ){  }
+  }
 };
 
 Apheleia.prototype.call = function call (fn) {
-  var args = slice(arguments, 1);
+  var args = arguments;
   var result = this.map(function (elem, result) { return elem[fn].apply(elem, args); });
   return isRelevantCollection(result) ? result : this
 };
@@ -320,7 +267,7 @@ Apheleia.prototype.find = function find (selector) {
 
 // Returns the collection in array format
 Apheleia.prototype.asArray = function asArray () {
-  return slice(this)
+  return arrayPrototype.slice.call(this)
 };
 
 // Object Property manipulation methods

@@ -16,7 +16,7 @@
 
 	<div style="width: 50px; height: 50px; background: red"></div>
 	<span style="color: red; font-size: 18px">KOE</span>
-	<span style="color: green; font-size: 18px">KOE2</span>
+	<span style="color: green; font-size: 18px" id="koe2">KOE2</span>
 	<span style="color: blue; font-size: 18px">KOE3</span>
 
 	<script>
@@ -61,7 +61,7 @@
 		// 	})
 		// 	.textContent = 'Ooooops'
 		function profile(fn, name, nTimes) {
-			nTimes = nTimes || 1000
+			nTimes = nTimes || 2000
 			const t0 = performance.now();
 			for (var p = 0; p < nTimes; p++) {
 				fn()

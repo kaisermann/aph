@@ -1,13 +1,10 @@
 import {
   isStr,
   isArrayLike,
-  slice,
   createElement,
   isRelevantCollection,
   aphParseContext,
-  aphParseElements,
-  profile,
-  test,
+  querySelector,
 } from './helpers.js'
 
 import { arrayPrototype, wrap } from './shared.js'
@@ -15,32 +12,32 @@ import { arrayPrototype, wrap } from './shared.js'
 export default class Apheleia {
   constructor (elems, context, aphMetaObj) {
     this.aph = aphMetaObj || {}
+    this.aph.context = context = aphParseContext(context)
 
-    test('init', [
-      profile(() => (this.aph.context = aphParseContext(context)), 'context'),
-      profile(
-        () =>
-          aphParseElements(
-            elems,
-            (this.aph.context = aphParseContext(context))
-          ),
-        'elems'
-      ),
-    ])
+    if (isStr(elems)) {
+      // If creation string, create the element
+      elems = elems[0] === '<' &&
+        elems[elems.length - 1] === '>' &&
+        elems.length > 2
+        ? createElement(elems)
+        : querySelector(elems, context)
+    }
 
-    for (
-      let list = aphParseElements(
-        elems,
-        (this.aph.context = aphParseContext(context)) // Sets current context
-      ),
-        len = (this.length = list.length); // Sets current length
-      len--; // Ends loop when reaches 0
-      this[len] = list[len] // Builds the array-like structure
-    );
+    if (!elems) return this
+    if (elems.nodeType || elems === window) {
+      this[0] = elems
+      this.length = 1
+    } else {
+      for (
+        let len = (this.length = elems.length); // Sets current length
+        len--; // Ends loop when reaches 0
+        this[len] = elems[len] // Builds the array-like structure
+      );
+    }
   }
 
   call (fn) {
-    const args = slice(arguments, 1)
+    const args = arguments
     const result = this.map((elem, result) => elem[fn].apply(elem, args))
     return isRelevantCollection(result) ? result : this
   }
@@ -72,7 +69,7 @@ export default class Apheleia {
 
   // Returns the collection in array format
   asArray () {
-    return slice(this)
+    return arrayPrototype.slice.call(this)
   }
 
   // Object Property manipulation methods

@@ -1,5 +1,3 @@
-import { arrayPrototype } from './shared'
-
 export function profile (fn, name, nTimes) {
   nTimes = nTimes || 1000
   const t0 = performance.now()
@@ -23,13 +21,16 @@ export function test (name, arr) {
 
 // Check if what's passed is a string
 export function isStr (maybeStr) {
-  return typeof maybeStr === 'string' || maybeStr instanceof String
+  return typeof maybeStr === 'string'
 }
 
 // Check if what's passed is to be considered a colletion
 export function isArrayLike (maybeCollection) {
   return (
-    maybeCollection && !isStr(maybeCollection) && maybeCollection.length != null
+    maybeCollection &&
+    !isStr(maybeCollection) &&
+    typeof maybeCollection !== 'function' &&
+    maybeCollection.length != null
   )
 }
 
@@ -37,22 +38,18 @@ export function isRelevantCollection (collection) {
   return collection[0] != null || collection[collection.length - 1] != null
 }
 
-// Slice a array-like collection
-export function slice (what, from) {
-  return arrayPrototype.slice.call(what, from || 0)
-}
-
 // Queries a selector
+const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/
 export function querySelector (selector, ctx) {
-  return /^#[\w-]*$/.test(selector) // if #id
-    ? [window[selector.slice(1)]]
-    : slice(
-        /^\.[\w-]*$/.test(selector) // if .class
-          ? ctx.getElementsByClassName(selector.slice(1))
-          : /^\w+$/.test(selector) // if tag (a, span, div, ...)
-            ? ctx.getElementsByTagName(selector)
-            : ctx.querySelectorAll(selector) // anything else
-      )
+  const regTest = simpleSelectorPattern.exec(selector)
+  let matched
+  return (matched = regTest[1]) // if #id
+    ? document.getElementById(matched)
+    : (matched = regTest[2]) // if tag (a, span, div, ...)
+      ? ctx.getElementsByTagName(matched)
+      : (matched = regTest[3]) // if .class
+        ? ctx.getElementsByClassName(matched)
+        : ctx.querySelectorAll(selector) // anything else
 }
 
 // Parses the passed context
@@ -74,37 +71,6 @@ export function createElement (str) {
   }
   documentFragment.body.innerHTML = str
   return documentFragment.body.childNodes[0]
-}
-
-export function aphParseElements (strOrCollectionOrElem, ctx) {
-  // If string passed
-  if (isStr(strOrCollectionOrElem)) {
-    // If creation string, create the element
-    if (
-      strOrCollectionOrElem[0] === '<' &&
-      strOrCollectionOrElem[strOrCollectionOrElem.length - 1] === '>' &&
-      strOrCollectionOrElem.length >= 3
-    ) {
-      return [createElement(strOrCollectionOrElem)]
-    }
-    // If not a creation string, let's search for the elements
-    return querySelector(strOrCollectionOrElem, ctx)
-  }
-
-  // If html element / window / document passed
-  if (
-    strOrCollectionOrElem instanceof Node ||
-    strOrCollectionOrElem === window
-  ) {
-    return [strOrCollectionOrElem]
-  }
-
-  // If collection passed
-  if (isArrayLike(strOrCollectionOrElem)) {
-    return strOrCollectionOrElem
-  }
-
-  return []
 }
 
 const prototypeCache = {}
@@ -131,8 +97,8 @@ export function assignMethodsAndProperties (
             // Let's cache the wrapper function
             // If we're dealing with a set method,
             // should allow to pass a object as parameter
-            prototypeCache[typeBeingDealtWith][key] = /^set/i.test(key) &&
-              key.slice(-1) !== 's'
+            prototypeCache[typeBeingDealtWith][key] = key.substr(0, 3) ===
+              'set' && key[key.length - 1] !== 's'
               ? function () {
                 const args = arguments
                 if (args.length === 1 && args[0].constructor === Object) {
