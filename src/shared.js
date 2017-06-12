@@ -2,6 +2,7 @@ import Apheleia from './Apheleia.js'
 import { assignMethodsAndProperties } from './helpers.js'
 
 export const arrayPrototype = Array.prototype
+export const doc = document
 
 function aphSetWrapper () {
   Apheleia.prototype.set.apply(this, arguments)

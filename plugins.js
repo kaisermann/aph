@@ -6,7 +6,7 @@ aph.fn.log = function () {
 
 aph.fn.repeat = function (numberOfClones) {
   let repeatedElements = []
-  let cachedElements = this.get()
+  let cachedElements = this.asArray()
   for (let i = numberOfClones; i--;) {
     repeatedElements = repeatedElements.concat(
       cachedElements.map(item => item.cloneNode())

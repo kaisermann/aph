@@ -1,23 +1,4 @@
-export function profile (fn, name, nTimes) {
-  nTimes = nTimes || 1000
-  const t0 = performance.now()
-  for (var p = 0; p < nTimes; p++) {
-    fn()
-  }
-  const t1 = performance.now()
-  return {
-    elapsed: t1 - t0,
-    name: name,
-  }
-}
-
-export function test (name, arr) {
-  console.group(name)
-  arr.sort((a, b) => a.elapsed > b.elapsed).forEach(item => {
-    console.log(`${item.name} - ${item.elapsed} msecs`)
-  })
-  console.groupEnd(name)
-}
+import { doc } from './shared.js'
 
 // Check if what's passed is a string
 export function isStr (maybeStr) {
@@ -41,36 +22,45 @@ export function isRelevantCollection (collection) {
 // Queries a selector
 const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/
 export function querySelector (selector, ctx) {
-  const regTest = simpleSelectorPattern.exec(selector)
+  let regTest
   let matched
-  return (matched = regTest[1]) // if #id
-    ? document.getElementById(matched)
-    : (matched = regTest[2]) // if tag (a, span, div, ...)
-      ? ctx.getElementsByTagName(matched)
-      : (matched = regTest[3]) // if .class
-        ? ctx.getElementsByClassName(matched)
-        : ctx.querySelectorAll(selector) // anything else
+  if ((regTest = simpleSelectorPattern.exec(selector))) {
+    if ((matched = regTest[3])) {
+      return ctx.getElementsByClassName(matched)
+    }
+
+    if ((matched = regTest[2])) {
+      return ctx.getElementsByTagName(matched)
+    }
+
+    if ((matched = regTest[1])) {
+      return doc.getElementById(matched)
+    }
+  }
+  return ctx.querySelectorAll(selector)
 }
 
 // Parses the passed context
 export function aphParseContext (elemOrAphOrStr) {
-  return elemOrAphOrStr instanceof Node
-    ? elemOrAphOrStr // If already a html element
-    : isStr(elemOrAphOrStr)
-      ? querySelector(elemOrAphOrStr, document)[0] // If string passed let's search for the element on the DOM
-      : isArrayLike(elemOrAphOrStr)
-        ? elemOrAphOrStr[0] // If already an collection
-        : document // Return the document.
+  return !elemOrAphOrStr
+    ? doc // Defaults to the document
+    : elemOrAphOrStr instanceof Node
+      ? elemOrAphOrStr // If already a html element
+      : isStr(elemOrAphOrStr)
+        ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
+        : isArrayLike(elemOrAphOrStr)
+          ? elemOrAphOrStr[0] // If already an collection
+          : doc // Return the document if nothing else...
 }
 
 // Parses the elements passed to aph()
-let documentFragment
+let docFragment
 export function createElement (str) {
-  if (!documentFragment) {
-    documentFragment = document.implementation.createHTMLDocument()
+  if (!docFragment) {
+    docFragment = doc.implementation.createHTMLDocument()
   }
-  documentFragment.body.innerHTML = str
-  return documentFragment.body.childNodes[0]
+  docFragment.body.innerHTML = str
+  return docFragment.body.childNodes[0]
 }
 
 const prototypeCache = {}

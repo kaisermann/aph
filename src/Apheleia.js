@@ -12,7 +12,6 @@ import { arrayPrototype, wrap } from './shared.js'
 export default class Apheleia {
   constructor (elems, context, aphMetaObj) {
     this.aph = aphMetaObj || {}
-    this.aph.context = context = aphParseContext(context)
 
     if (isStr(elems)) {
       // If creation string, create the element
@@ -20,7 +19,7 @@ export default class Apheleia {
         elems[elems.length - 1] === '>' &&
         elems.length > 2
         ? createElement(elems)
-        : querySelector(elems, context)
+        : querySelector(elems, (this.aph.context = aphParseContext(context)))
     }
 
     if (!elems) return this

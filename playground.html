@@ -60,7 +60,7 @@
 		// 		padding: 10
 		// 	})
 		// 	.textContent = 'Ooooops'
-		function profile(fn, name, nTimes) {
+		function profile(name, fn, nTimes) {
 			nTimes = nTimes || 2000
 			const t0 = performance.now();
 			for (var p = 0; p < nTimes; p++) {
@@ -82,9 +82,9 @@
 		}
 
 		test('span', [
-			profile(() => aph('span'), 'aph'),
-			profile(() => jQuery('span'), 'jQuery'),
-			profile(() => cash('span'), 'cash'),
+			profile('aph', () => aph('span')),
+			profile('jQuery', () => jQuery('span')),
+			profile('cash', () => cash('span')),
 		])
 	</script>
 </body>
