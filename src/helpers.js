@@ -1,8 +1,29 @@
-import { arrayProto, querySelector } from './shared'
+import { arrayPrototype } from './shared'
+
+export function profile (fn, name, nTimes) {
+  nTimes = nTimes || 1000
+  const t0 = performance.now()
+  for (var p = 0; p < nTimes; p++) {
+    fn()
+  }
+  const t1 = performance.now()
+  return {
+    elapsed: t1 - t0,
+    name: name,
+  }
+}
+
+export function test (name, arr) {
+  console.group(name)
+  arr.sort((a, b) => a.elapsed > b.elapsed).forEach(item => {
+    console.log(`${item.name} - ${item.elapsed} msecs`)
+  })
+  console.groupEnd(name)
+}
 
 // Check if what's passed is a string
 export function isStr (maybeStr) {
-  return '' + maybeStr === maybeStr
+  return typeof maybeStr === 'string' || maybeStr instanceof String
 }
 
 // Check if what's passed is to be considered a colletion
@@ -18,7 +39,20 @@ export function isRelevantCollection (collection) {
 
 // Slice a array-like collection
 export function slice (what, from) {
-  return arrayProto.slice.call(what, from || 0)
+  return arrayPrototype.slice.call(what, from || 0)
+}
+
+// Queries a selector
+export function querySelector (selector, ctx) {
+  return /^#[\w-]*$/.test(selector) // if #id
+    ? [window[selector.slice(1)]]
+    : slice(
+        /^\.[\w-]*$/.test(selector) // if .class
+          ? ctx.getElementsByClassName(selector.slice(1))
+          : /^\w+$/.test(selector) // if tag (a, span, div, ...)
+            ? ctx.getElementsByTagName(selector)
+            : ctx.querySelectorAll(selector) // anything else
+      )
 }
 
 // Parses the passed context
@@ -46,7 +80,11 @@ export function aphParseElements (strOrCollectionOrElem, ctx) {
   // If string passed
   if (isStr(strOrCollectionOrElem)) {
     // If creation string, create the element
-    if (/<.+>/.test(strOrCollectionOrElem)) {
+    if (
+      strOrCollectionOrElem[0] === '<' &&
+      strOrCollectionOrElem[strOrCollectionOrElem.length - 1] === '>' &&
+      strOrCollectionOrElem.length >= 3
+    ) {
       return [createElement(strOrCollectionOrElem)]
     }
     // If not a creation string, let's search for the elements

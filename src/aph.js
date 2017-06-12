@@ -1,6 +1,11 @@
 import Apheleia from './Apheleia.js'
-import { arrayProto, querySelector, wrap } from './shared.js'
-import { assignMethodsAndProperties, createElement } from './helpers.js'
+import { arrayPrototype, wrap } from './shared.js'
+import {
+  assignMethodsAndProperties,
+  createElement,
+  aphParseContext,
+  querySelector,
+} from './helpers.js'
 
 export default function aph (elems, context, metaObj) {
   return new Apheleia(elems, context, metaObj)
@@ -8,17 +13,11 @@ export default function aph (elems, context, metaObj) {
 
 aph.fn = Apheleia.prototype
 aph.wrap = wrap
-aph.querySelector = querySelector
+aph.querySelector = function (selector, context) {
+  querySelector(selector, aphParseContext(context))
+}
 
 // Extending the Array Prototype
-const newCollectionMethods = ['map', 'filter']
-// Here is where all the magic happens
-newCollectionMethods.forEach(key => {
-  aph.fn[key] = function () {
-    return wrap(arrayProto[key].apply(this, arguments), this)
-  }
-})
-
 // Irrelevant methods on the context of an Apheleia Collection
 const ignoreMethods = [
   'concat',
@@ -32,9 +31,9 @@ const ignoreMethods = [
   'sort',
 ]
 
-Object.getOwnPropertyNames(arrayProto).forEach(key => {
+Object.getOwnPropertyNames(arrayPrototype).forEach(key => {
   if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
-    aph.fn[key] = arrayProto[key]
+    aph.fn[key] = arrayPrototype[key]
   }
 })
 

@@ -6,11 +6,27 @@ import {
   isRelevantCollection,
   aphParseContext,
   aphParseElements,
+  profile,
+  test,
 } from './helpers.js'
+
+import { arrayPrototype, wrap } from './shared.js'
 
 export default class Apheleia {
   constructor (elems, context, aphMetaObj) {
     this.aph = aphMetaObj || {}
+
+    test('init', [
+      profile(() => (this.aph.context = aphParseContext(context)), 'context'),
+      profile(
+        () =>
+          aphParseElements(
+            elems,
+            (this.aph.context = aphParseContext(context))
+          ),
+        'elems'
+      ),
+    ])
 
     for (
       let list = aphParseElements(
@@ -27,6 +43,14 @@ export default class Apheleia {
     const args = slice(arguments, 1)
     const result = this.map((elem, result) => elem[fn].apply(elem, args))
     return isRelevantCollection(result) ? result : this
+  }
+
+  map () {
+    return wrap(arrayPrototype.map.apply(this, arguments), this)
+  }
+
+  filter () {
+    return wrap(arrayPrototype.filter.apply(this, arguments), this)
   }
 
   // Iterates through the elements with a 'callback(element, index)''

@@ -1,24 +1,7 @@
 import Apheleia from './Apheleia.js'
-import {
-  slice,
-  aphParseContext,
-  assignMethodsAndProperties,
-} from './helpers.js'
+import { assignMethodsAndProperties } from './helpers.js'
 
-export const arrayProto = Array.prototype
-
-export function querySelector (selector, ctx) {
-  ctx = aphParseContext(ctx)
-  return /^#[\w-]*$/.test(selector) // if #id
-    ? [window[selector.slice(1)]]
-    : slice(
-        /^\.[\w-]*$/.test(selector) // if .class
-          ? ctx.getElementsByClassName(selector.slice(1))
-          : /^\w+$/.test(selector) // if tag (a, span, div, ...)
-            ? ctx.getElementsByTagName(selector)
-            : ctx.querySelectorAll(selector) // anything else
-      )
-}
+export const arrayPrototype = Array.prototype
 
 function aphSetWrapper () {
   Apheleia.prototype.set.apply(this, arguments)
@@ -57,11 +40,7 @@ export function wrap (what, owner) {
       what.set = aphSetWrapper
       what.aph = { owner: owner }
 
-      assignMethodsAndProperties(
-        what,
-        item,
-        instance => instance.aph.owner
-      )
+      assignMethodsAndProperties(what, item, instance => instance.aph.owner)
 
       return what
     }

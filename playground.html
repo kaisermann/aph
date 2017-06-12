@@ -11,6 +11,8 @@
 
 	<script type="text/javascript" src="./dist/aph.js"></script>
 	<script type="text/javascript" src="./plugins.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+	<script src="https://rawgit.com/kenwheeler/cash/master/dist/cash.js"></script>
 
 	<div style="width: 50px; height: 50px; background: red"></div>
 	<span style="color: red; font-size: 18px">KOE</span>
@@ -22,42 +24,68 @@
 		// 	args.forEach(arg => document.body.innerHTML += arg + '<br>')
 		// }
 
-		aph(document.body)
-			.append(
-				aph('<div>')
-				.classList.add('page-content')
-				.append(
-					[
-						'<header></header>',
-						document.createElement('aside'),
-						aph('<main>').append(
-							aph('<div>')
-							.classList.add('main-content')
-							.set('textContent', 'Hello wooooorld!')
-						),
-						aph('<footer>')
-					]
-				)
-			)
-		aph('body').append(['<h1>Heading 1</h1>', '<h2>Heading 2</h2>'])
+		// aph(document.body)
+		// 	.append(
+		// 		aph('<div>')
+		// 		.classList.add('page-content')
+		// 		.append(
+		// 			[
+		// 				'<header></header>',
+		// 				document.createElement('aside'),
+		// 				aph('<main>').append(
+		// 					aph('<div>')
+		// 					.classList.add('main-content')
+		// 					.set('textContent', 'Hello wooooorld!')
+		// 				),
+		// 				aph('<footer>')
+		// 			]
+		// 		)
+		// 	)
+		// aph('body').append(['<h1>Heading 1</h1>', '<h2>Heading 2</h2>'])
+		//
+		// aph(window).addEventListener('click', function() {
+		// 	console.log('Window Click')
+		// })
+		//
+		// aph('span')
+		// 	.classList.add('test-class')
+		// 	.setAttribute('custom-attr', 'test-attr')
+		// 	.setAttribute({
+		// 		'custom-attr-2': 'test-attr-2',
+		// 		'custom-attr-3': 'test-attr-3'
+		// 	})
+		// 	.style.setProperty({
+		// 		color: 'red',
+		// 		background: 'pink',
+		// 		padding: 10
+		// 	})
+		// 	.textContent = 'Ooooops'
+		function profile(fn, name, nTimes) {
+			nTimes = nTimes || 1000
+			const t0 = performance.now();
+			for (var p = 0; p < nTimes; p++) {
+				fn()
+			}
+			const t1 = performance.now();
+			return {
+				elapsed: t1 - t0,
+				name: name
+			}
+		}
 
-		aph(window).addEventListener('click', function() {
-			console.log('Window Click')
-		})
+		function test(name, arr) {
+			console.group(name)
+			arr.sort((a, b) => a.elapsed > b.elapsed).forEach(item => {
+				console.log(`${item.name} - ${item.elapsed} msecs`)
+			})
+			console.groupEnd(name)
+		}
 
-		aph('span')
-			.classList.add('test-class')
-			.setAttribute('custom-attr', 'test-attr')
-			.setAttribute({
-				'custom-attr-2': 'test-attr-2',
-				'custom-attr-3': 'test-attr-3'
-			})
-			.style.setProperty({
-				color: 'red',
-				background: 'pink',
-				padding: 10
-			})
-			.textContent = 'Ooooops'
+		test('span', [
+			profile(() => aph('span'), 'aph'),
+			profile(() => jQuery('span'), 'jQuery'),
+			profile(() => cash('span'), 'cash'),
+		])
 	</script>
 </body>
 
