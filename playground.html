@@ -13,6 +13,7 @@
 	<script type="text/javascript" src="./plugins.js"></script>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
 	<script src="https://rawgit.com/kenwheeler/cash/master/dist/cash.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.js"></script>
 
 	<div style="width: 50px; height: 50px; background: red"></div>
 	<span style="color: red; font-size: 18px">KOE</span>
@@ -60,31 +61,61 @@
 		// 		padding: 10
 		// 	})
 		// 	.textContent = 'Ooooops'
-		function profile(name, fn, nTimes) {
-			nTimes = nTimes || 2000
+		aph('body').append([
+			aph('<div id="test-id">'),
+			aph('<span class="test-class">').repeat(5),
+			aph('<h1>Heading 1</h1>').repeat(2),
+			aph('<h2 data-attribute="test">Heading 2</h2>').repeat(2),
+		])
+
+		const scriptNames = ['aph', 'cash', 'jquery', 'zepto']
+
+		function runFn(fn, i) {
 			const t0 = performance.now();
-			for (var p = 0; p < nTimes; p++) {
+			for (var p = 0; p < 10000; p++) {
 				fn()
 			}
 			const t1 = performance.now();
 			return {
 				elapsed: t1 - t0,
-				name: name
+				name: scriptNames[i]
 			}
 		}
 
-		function test(name, arr) {
+		function profile(name, arr) {
 			console.group(name)
-			arr.sort((a, b) => a.elapsed > b.elapsed).forEach(item => {
-				console.log(`${item.name} - ${item.elapsed} msecs`)
+			arr.map(runFn).sort((a, b) => a.elapsed > b.elapsed).forEach((item, i, arr) => {
+				console.log(`%c ${item.name} - ${item.elapsed} msecs`, `background: ${item.name === 'aph' ? 'darkGreen; ' : '#777;'}; color: white`)
 			})
 			console.groupEnd(name)
 		}
 
-		test('span', [
-			profile('aph', () => aph('span')),
-			profile('jQuery', () => jQuery('span')),
-			profile('cash', () => cash('span')),
+		profile('id selection', [
+			() => aph('#test-id'),
+			() => cash('#test-id'),
+			() => jQuery('#test-id'),
+			() => Zepto('#test-id'),
+		])
+
+		profile('class selection', [
+			() => aph('.test-class'),
+			() => cash('.test-class'),
+			() => jQuery('.test-class'),
+			() => Zepto('.test-class'),
+		])
+
+		profile('element selection', [
+			() => aph('h1'),
+			() => cash('h1'),
+			() => jQuery('h1'),
+			() => Zepto('h1'),
+		])
+
+		profile('complex selection', [
+			() => aph('body h2[data-attribute="test"]'),
+			() => cash('body h2[data-attribute="test"]'),
+			() => jQuery('body h2[data-attribute="test"]'),
+			() => Zepto('body h2[data-attribute="test"]'),
 		])
 	</script>
 </body>

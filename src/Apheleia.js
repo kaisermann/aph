@@ -23,7 +23,7 @@ export default class Apheleia {
     }
 
     if (!elems) return this
-    if (elems.nodeType || elems === window) {
+    if (elems.nodeType === 1 || elems === window) {
       this[0] = elems
       this.length = 1
     } else {
@@ -178,9 +178,9 @@ export default class Apheleia {
     // let's pass the parent and child nodes
     // and let the callback do all the work
     return this.forEach(parent =>
-      flatChildren.forEach(child =>
+      flatChildren.forEach(child => {
         cb(parent, isStr(child) ? createElement(child) : child)
-      )
+      })
     )
   }
 }

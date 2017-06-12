@@ -1,11 +1,14 @@
+// We use 'domino' here because
+// 'jsdom-global' doesn't work for some reason :()
 global.window = require('domino').createWindow('', '')
-global.document = window.document
+global.document = global.window.document
+require('colors')
 
 const aph = require('./dist/aph.js')
-const jquery = require('jquery')
+const jQuery = require('jquery')
 const cash = require('cash-dom')
+const Zepto = require('zepto-node')(window)
 const Benchmark = require('benchmark')
-require('colors')
 
 aph.fn.repeat = function (numberOfClones) {
   let repeatedElements = []
@@ -22,9 +25,10 @@ aph('body').append([
   aph('<div id="test-id">'),
   aph('<span class="test-class">').repeat(5),
   aph('<h1>Heading 1</h1>').repeat(2),
+  aph('<h2 data-attribute="test">Heading 2</h2>').repeat(2),
 ])
 
-const scriptNames = ['aph', 'cash', 'jquery']
+const scriptNames = ['aph', 'cash', 'jQuery', 'Zepto']
 function profile (name, tests) {
   const suite = new Benchmark.Suite(name)
   tests.forEach((test, i) => suite.add(scriptNames[i], test))
@@ -35,11 +39,11 @@ function profile (name, tests) {
     .on('cycle', event => console.log(String(event.target).yellow))
     .on('complete', function () {
       const fastest = this.filter('fastest').map('name')
-      if (~fastest.indexOf('aph')) {
-        console.log(`\nFastest is ${fastest}`.cyan)
-      } else {
-        console.log(`\nFastest is ${fastest}`.red)
-      }
+      const slowest = this.filter('slowest').map('name')
+      console.log(
+        `\nFastest is ${fastest}`[~fastest.indexOf('aph') ? 'bgCyan' : 'bgRed']
+      )
+      console.log(`Slowest is ${slowest}`)
       console.log('\n------------------\n')
     })
     .run()
@@ -48,19 +52,29 @@ function profile (name, tests) {
 profile('id selection', [
   () => aph('#test-id'),
   () => cash('#test-id'),
-  () => jquery('#test-id'),
+  () => jQuery('#test-id'),
+  () => Zepto('#test-id'),
 ])
 
 profile('class selection', [
   () => aph('.test-class'),
   () => cash('.test-class'),
-  () => jquery('.test-class'),
+  () => jQuery('.test-class'),
+  () => Zepto('.test-class'),
 ])
 
 profile('element selection', [
   () => aph('h1'),
   () => cash('h1'),
-  () => jquery('h1'),
+  () => jQuery('h1'),
+  () => Zepto('h1'),
+])
+
+profile('complex selection', [
+  () => aph('body h2[data-attribute="test"]'),
+  () => cash('body h2[data-attribute="test"]'),
+  () => jQuery('body h2[data-attribute="test"]'),
+  () => Zepto('body h2[data-attribute="test"]'),
 ])
 
 process.exit()

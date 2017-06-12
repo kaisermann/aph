@@ -19,16 +19,16 @@ function wrap (what, owner) {
     item = what[i];
     if (item == null) { continue }
 
-    if (item instanceof Node) {
+    if (item.nodeType === 1) {
       // If we received a single node
       if (!~acc.indexOf(item)) {
         acc.push(item);
       }
     } else if (
-      item instanceof NodeList ||
-      item instanceof HTMLCollection ||
+      ((item instanceof NodeList || item instanceof Array) &&
+        item[0].nodeType === 1) ||
       item instanceof Apheleia ||
-      (item instanceof Array && item[0] instanceof Node)
+      item instanceof HTMLCollection
     ) {
       // If we received a node list/collection
       for (var j = 0, len2 = item.length; j < len2; j++) {
@@ -53,7 +53,6 @@ function wrap (what, owner) {
   return new Apheleia(acc, owner.aph.context, { owner: owner })
 }
 
-// Check if what's passed is a string
 function isStr (maybeStr) {
   return typeof maybeStr === 'string'
 }
@@ -231,7 +230,7 @@ var Apheleia = function Apheleia (elems, context, aphMetaObj) {
   }
 
   if (!elems) { return this }
-  if (elems.nodeType || elems === window) {
+  if (elems.nodeType === 1 || elems === window) {
     this[0] = elems;
     this.length = 1;
   } else {
@@ -385,8 +384,9 @@ Apheleia.prototype.html = function html (children, cb) {
   // If a callback is received as the second argument
   // let's pass the parent and child nodes
   // and let the callback do all the work
-  return this.forEach(function (parent) { return flatChildren.forEach(function (child) { return cb(parent, isStr(child) ? createElement(child) : child); }
-    ); }
+  return this.forEach(function (parent) { return flatChildren.forEach(function (child) {
+      cb(parent, isStr(child) ? createElement(child) : child);
+    }); }
   )
 };
 

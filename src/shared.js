@@ -16,16 +16,16 @@ export function wrap (what, owner) {
     item = what[i]
     if (item == null) continue
 
-    if (item instanceof Node) {
+    if (item.nodeType === 1) {
       // If we received a single node
       if (!~acc.indexOf(item)) {
         acc.push(item)
       }
     } else if (
-      item instanceof NodeList ||
-      item instanceof HTMLCollection ||
+      ((item instanceof NodeList || item instanceof Array) &&
+        item[0].nodeType === 1) ||
       item instanceof Apheleia ||
-      (item instanceof Array && item[0] instanceof Node)
+      item instanceof HTMLCollection
     ) {
       // If we received a node list/collection
       for (let j = 0, len2 = item.length; j < len2; j++) {
