@@ -1,5 +1,5 @@
 import Apheleia from './Apheleia.js'
-import { arrayProto, querySelector, flatWrap } from './shared.js'
+import { arrayProto, querySelector, wrap } from './shared.js'
 import { assignMethodsAndProperties, createElement } from './helpers.js'
 
 export default function aph (elems, context, metaObj) {
@@ -7,7 +7,7 @@ export default function aph (elems, context, metaObj) {
 }
 
 aph.fn = Apheleia.prototype
-aph.flatWrap = flatWrap
+aph.wrap = wrap
 aph.querySelector = querySelector
 
 // Extending the Array Prototype
@@ -15,7 +15,7 @@ const newCollectionMethods = ['map', 'filter']
 // Here is where all the magic happens
 newCollectionMethods.forEach(key => {
   aph.fn[key] = function () {
-    return flatWrap(arrayProto[key].apply(this, arguments), this)
+    return wrap(arrayProto[key].apply(this, arguments), this)
   }
 })
 

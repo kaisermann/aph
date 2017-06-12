@@ -25,7 +25,7 @@ function aphSetWrapper () {
   return this.aph.owner
 }
 
-export function flatWrap (what, owner) {
+export function wrap (what, owner) {
   let acc = []
 
   for (let i = 0, len = what.length, item; i < len; i++) {

@@ -24,7 +24,7 @@ function aphSetWrapper () {
   return this.aph.owner
 }
 
-function flatWrap (what, owner) {
+function wrap (what, owner) {
   var acc = [];
 
   for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
@@ -398,7 +398,7 @@ function aph (elems, context, metaObj) {
 }
 
 aph.fn = Apheleia.prototype;
-aph.flatWrap = flatWrap;
+aph.wrap = wrap;
 aph.querySelector = querySelector;
 
 // Extending the Array Prototype
@@ -406,7 +406,7 @@ var newCollectionMethods = ['map', 'filter'];
 // Here is where all the magic happens
 newCollectionMethods.forEach(function (key) {
   aph.fn[key] = function () {
-    return flatWrap(arrayProto[key].apply(this, arguments), this)
+    return wrap(arrayProto[key].apply(this, arguments), this)
   };
 });
 
