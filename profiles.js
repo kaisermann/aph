@@ -110,11 +110,8 @@ const startProfiling = function (profile, libs) {
     () => ZeptoCache.css('background', 'red'),
   ])
 
-  profile('setting css style (aph vanilla way)', [
-    () => (aphCache.style.background = 'red'),
-    () => cashCache.css('background', 'red'),
-    () => jQueryCache.css('background', 'red'),
-    () => ZeptoCache.css('background', 'red'),
+  profile('setting css style (aph semi-vanilla way)', [
+    () => aphCache.style.set('background', 'red'),
   ])
 
   profile('getting css style (jquery like)', [
@@ -125,7 +122,7 @@ const startProfiling = function (profile, libs) {
   ])
 
   profile('getting css style (aph vanilla way)', [
-    () => aphCache.style.background,
+    () => aphCache.style.get('background'),
     () => cashCache.css('background'),
     () => jQueryCache.css('background'),
     () => ZeptoCache.css('background'),

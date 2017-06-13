@@ -4,10 +4,6 @@ export function hasKey (what, key) {
   return typeof what[key] !== 'undefined'
 }
 
-export function inverseFor (collection, cb) {
-  for (let len = collection.length; len--;) cb(collection[len], len)
-}
-
 // Check if what's passed is a string
 export function isStr (maybeStr) {
   return typeof maybeStr === 'string'
@@ -53,12 +49,12 @@ export function aphParseContext (elemOrAphOrStr) {
   return !elemOrAphOrStr
     ? doc // Defaults to the document
     : elemOrAphOrStr instanceof Node
-      ? elemOrAphOrStr // If already a html element
-      : isStr(elemOrAphOrStr)
-        ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
-        : isArrayLike(elemOrAphOrStr)
-          ? elemOrAphOrStr[0] // If already an collection
-          : doc // Return the document if nothing else...
+        ? elemOrAphOrStr // If already a html element
+        : isStr(elemOrAphOrStr)
+            ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
+            : isArrayLike(elemOrAphOrStr)
+                ? elemOrAphOrStr[0] // If already an collection
+                : doc // Return the document if nothing else...
 }
 
 // Parses the elements passed to aph()
@@ -80,124 +76,94 @@ export function createElement (str, match) {
 }
 
 const wrappedMethodsCache = {}
-const prototypeNamesCache = {}
-const propCache = {}
-
-export function setPropOrMethod (what, collection, key, curType, undefinedCallback) {
-  if (!hasKey(what, key)) {
-    try {
-      if (collection[key] instanceof Function) {
-        if (!wrappedMethodsCache[curType][key]) {
-          // Let's cache the wrapper function
-          // If we're dealing with a set method,
-          // should allow to pass a object as parameter
-          wrappedMethodsCache[curType][key] = key.substr(0, 3) === 'set' &&
-            key[key.length - 1] !== 's'
-            ? function () {
-              const args = arguments
-              if (args.length === 1 && args[0].constructor === Object) {
-                return undefinedCallback(
-                    // this.forEach returns 'this'
-                    this.forEach(item => {
-                      for (const objKey in args[0]) {
-                        collection[key].call(item, objKey, args[0][objKey])
-                      }
-                    })
-                  )
-              }
-
-              const result = this.map(i => collection[key].apply(i, args))
-              return isRelevantCollection(result)
-                  ? result
-                  : undefinedCallback(this)
-            }
-            : function () {
-              const args = arguments
-              const result = this.map(i => collection[key].apply(i, args))
-              return isRelevantCollection(result)
-                  ? result
-                  : undefinedCallback(this)
-            }
+export function wrapPrototypeMethod (
+  what,
+  methodName,
+  method,
+  curType,
+  undefinedCallback
+) {
+  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
+    // Let's cache the wrapper function
+    // If we're dealing with a set method,
+    // should allow to pass a object as parameter
+    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
+      'set' && methodName[methodName.length - 1] !== 's'
+      ? function () {
+        const args = arguments
+        if (args.length === 1 && args[0].constructor === Object) {
+          return undefinedCallback(
+              // this.forEach returns 'this'
+              this.forEach(item => {
+                for (const objKey in args[0]) {
+                  method.call(item, objKey, args[0][objKey])
+                }
+              })
+            )
         }
-        what[key] = wrappedMethodsCache[curType][key]
-      } else {
-        propGetSetWithProp(what, key)
+
+        const result = this.map(i => method.apply(i, args))
+        return isRelevantCollection(result) ? result : undefinedCallback(this)
       }
-    } catch (ex) {
-      // If we reach this exception, we are probably dealing with a property / getter / setter
-      propGetSetWithProp(what, key)
-    }
+      : function () {
+        const args = arguments
+        const result = this.map(i => method.apply(i, args))
+        return isRelevantCollection(result) ? result : undefinedCallback(this)
+      }
   }
+  what[methodName] = wrappedMethodsCache[curType][methodName]
 }
 
-export function assignMethodsAndProperties (
+const protoNames = {}
+export function extendObjectPrototype (
   what,
-  propCollection,
-  undefinedResultCallback
+  collection,
+  undefinedResultCallback,
+  shouldExtendProps
 ) {
-  const curType = propCollection.constructor.name
+  const { name: curType, prototype: curProto } = collection.constructor
 
-  // If the wrapped methods cache doesn't exist for this variable type
-  // Let's create it
-  const curPrototype = Object.getPrototypeOf(propCollection)
-  if (!wrappedMethodsCache[curType]) {
-    const usedKeys = {}
-    prototypeNamesCache[curType] = Object.getOwnPropertyNames(curPrototype)
+  if (!hasKey(wrappedMethodsCache, curType)) {
     wrappedMethodsCache[curType] = {}
-    propCache[curType] = []
+  }
 
-    inverseFor(prototypeNamesCache[curType], methodName => {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        methodName,
-        curType,
-        undefinedResultCallback
-      )
-      usedKeys[methodName] = 1
-    })
-
-    for (let key in propCollection) {
-      if (isNaN(key) && !hasKey(usedKeys, key)) {
-        propCache[curType].push(key)
-        setPropOrMethod(
+  function aux (collection, key) {
+    try {
+      if (collection[key] instanceof Function) {
+        wrapPrototypeMethod(
           what,
-          curPrototype,
           key,
+          collection[key],
           curType,
           undefinedResultCallback
         )
+      } else if (shouldExtendProps) propGetSet(what, key)
+    } catch (ex) {
+      if (shouldExtendProps) propGetSet(what, key)
+    }
+  }
+
+  if (shouldExtendProps) {
+    for (const key in collection) {
+      if (!hasKey(what, key)) {
+        aux(collection, key) // prop list, key
       }
     }
-
-    // And now the properties
-    // Is there already a cache for this type's properties?
   } else {
-    // If yes, let's use the prop cache
-    // Inverse for loop, the order is not relevant here
-    inverseFor(prototypeNamesCache[curType], methodName => {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        methodName,
-        curType,
-        undefinedResultCallback
-      )
-    })
-    inverseFor(propCache[curType], prop => {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        prop,
-        curType,
-        undefinedResultCallback
-      )
-    })
+    collection = hasKey(protoNames, curType)
+      ? protoNames[curType]
+      : (protoNames[curType] = Object.getOwnPropertyNames(curProto))
+
+    for (let len = collection.length; len--;) {
+      if (!hasKey(what, collection[len])) {
+        aux(curProto, collection[len]) // proto, key
+      }
+    }
   }
 }
 
 // Sets the set/get methods of a property as the Apheleia.prop method
-export function propGetSetWithProp (obj, key) {
+export function propGetSet (obj, key) {
   Object.defineProperty(obj, key, {
     get () {
       return this.get(key)

@@ -33,7 +33,7 @@ Yep, you read it right. Almost like Vanilla JS.
           background: 'pink',
           padding: 10
       })
-      .textContent = 'Ooooops'
+      .set('textContent', 'Ooooops') // I said 'almost like vanilla', right
   </script>
 </html>
 ```
@@ -69,7 +69,7 @@ Creates an Apheleia Collection around all divs
 Returns the classList of all divs
 [DOMTokenList(0), DOMTokenList(1), DOMTokenList(1)]
 
-3) aph identifies the type of the first entry (DOMTokenList), reads and caches its methods and properties and extends the array returned in step 2. The array will now be considered an Apheleia Wrapper.
+3) aph identifies the type of the first entry (DOMTokenList), reads and caches its prototype methods and extends the array returned in step 2. The array will now be considered an Apheleia Wrapper.
 
 4) aph('div').classList.add('test-class','test-class-2')
 

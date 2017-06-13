@@ -1,5 +1,5 @@
 import Apheleia from './Apheleia.js'
-import { assignMethodsAndProperties } from './helpers.js'
+import { extendObjectPrototype } from './helpers.js'
 
 export const arrayPrototype = Array.prototype
 export const doc = document
@@ -41,7 +41,7 @@ export function wrap (what, owner) {
       what.set = aphSetWrapper
       what.aph = { owner: owner }
 
-      assignMethodsAndProperties(what, item, instance => instance.aph.owner)
+      extendObjectPrototype(what, item, instance => instance.aph.owner)
 
       return what
     }

@@ -44,7 +44,7 @@ function wrap (what, owner) {
       what.set = aphSetWrapper;
       what.aph = { owner: owner };
 
-      assignMethodsAndProperties(what, item, function (instance) { return instance.aph.owner; });
+      extendObjectPrototype(what, item, function (instance) { return instance.aph.owner; });
 
       return what
     }
@@ -55,10 +55,6 @@ function wrap (what, owner) {
 
 function hasKey (what, key) {
   return typeof what[key] !== 'undefined'
-}
-
-function inverseFor (collection, cb) {
-  for (var len = collection.length; len--;) { cb(collection[len], len); }
 }
 
 // Check if what's passed is a string
@@ -106,12 +102,12 @@ function aphParseContext (elemOrAphOrStr) {
   return !elemOrAphOrStr
     ? doc // Defaults to the document
     : elemOrAphOrStr instanceof Node
-      ? elemOrAphOrStr // If already a html element
-      : isStr(elemOrAphOrStr)
-        ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
-        : isArrayLike(elemOrAphOrStr)
-          ? elemOrAphOrStr[0] // If already an collection
-          : doc // Return the document if nothing else...
+        ? elemOrAphOrStr // If already a html element
+        : isStr(elemOrAphOrStr)
+            ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
+            : isArrayLike(elemOrAphOrStr)
+                ? elemOrAphOrStr[0] // If already an collection
+                : doc // Return the document if nothing else...
 }
 
 // Parses the elements passed to aph()
@@ -133,124 +129,96 @@ function createElement (str, match) {
 }
 
 var wrappedMethodsCache = {};
-var prototypeNamesCache = {};
-var propCache = {};
-
-function setPropOrMethod (what, collection, key, curType, undefinedCallback) {
-  if (!hasKey(what, key)) {
-    try {
-      if (collection[key] instanceof Function) {
-        if (!wrappedMethodsCache[curType][key]) {
-          // Let's cache the wrapper function
-          // If we're dealing with a set method,
-          // should allow to pass a object as parameter
-          wrappedMethodsCache[curType][key] = key.substr(0, 3) === 'set' &&
-            key[key.length - 1] !== 's'
-            ? function () {
-              var args = arguments;
-              if (args.length === 1 && args[0].constructor === Object) {
-                return undefinedCallback(
-                    // this.forEach returns 'this'
-                    this.forEach(function (item) {
-                      for (var objKey in args[0]) {
-                        collection[key].call(item, objKey, args[0][objKey]);
-                      }
-                    })
-                  )
-              }
-
-              var result = this.map(function (i) { return collection[key].apply(i, args); });
-              return isRelevantCollection(result)
-                  ? result
-                  : undefinedCallback(this)
-            }
-            : function () {
-              var args = arguments;
-              var result = this.map(function (i) { return collection[key].apply(i, args); });
-              return isRelevantCollection(result)
-                  ? result
-                  : undefinedCallback(this)
-            };
+function wrapPrototypeMethod (
+  what,
+  methodName,
+  method,
+  curType,
+  undefinedCallback
+) {
+  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
+    // Let's cache the wrapper function
+    // If we're dealing with a set method,
+    // should allow to pass a object as parameter
+    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
+      'set' && methodName[methodName.length - 1] !== 's'
+      ? function () {
+        var args = arguments;
+        if (args.length === 1 && args[0].constructor === Object) {
+          return undefinedCallback(
+              // this.forEach returns 'this'
+              this.forEach(function (item) {
+                for (var objKey in args[0]) {
+                  method.call(item, objKey, args[0][objKey]);
+                }
+              })
+            )
         }
-        what[key] = wrappedMethodsCache[curType][key];
-      } else {
-        propGetSetWithProp(what, key);
+
+        var result = this.map(function (i) { return method.apply(i, args); });
+        return isRelevantCollection(result) ? result : undefinedCallback(this)
       }
-    } catch (ex) {
-      // If we reach this exception, we are probably dealing with a property / getter / setter
-      propGetSetWithProp(what, key);
-    }
+      : function () {
+        var args = arguments;
+        var result = this.map(function (i) { return method.apply(i, args); });
+        return isRelevantCollection(result) ? result : undefinedCallback(this)
+      };
   }
+  what[methodName] = wrappedMethodsCache[curType][methodName];
 }
 
-function assignMethodsAndProperties (
+var protoNames = {};
+function extendObjectPrototype (
   what,
-  propCollection,
-  undefinedResultCallback
+  collection,
+  undefinedResultCallback,
+  shouldExtendProps
 ) {
-  var curType = propCollection.constructor.name;
+  var ref = collection.constructor;
+  var curType = ref.name;
+  var curProto = ref.prototype;
 
-  // If the wrapped methods cache doesn't exist for this variable type
-  // Let's create it
-  var curPrototype = Object.getPrototypeOf(propCollection);
-  if (!wrappedMethodsCache[curType]) {
-    var usedKeys = {};
-    prototypeNamesCache[curType] = Object.getOwnPropertyNames(curPrototype);
+  if (!hasKey(wrappedMethodsCache, curType)) {
     wrappedMethodsCache[curType] = {};
-    propCache[curType] = [];
+  }
 
-    inverseFor(prototypeNamesCache[curType], function (methodName) {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        methodName,
-        curType,
-        undefinedResultCallback
-      );
-      usedKeys[methodName] = 1;
-    });
-
-    for (var key in propCollection) {
-      if (isNaN(key) && !hasKey(usedKeys, key)) {
-        propCache[curType].push(key);
-        setPropOrMethod(
+  function aux (collection, key) {
+    try {
+      if (collection[key] instanceof Function) {
+        wrapPrototypeMethod(
           what,
-          curPrototype,
           key,
+          collection[key],
           curType,
           undefinedResultCallback
         );
+      } else if (shouldExtendProps) { propGetSet(what, key); }
+    } catch (ex) {
+      if (shouldExtendProps) { propGetSet(what, key); }
+    }
+  }
+
+  if (shouldExtendProps) {
+    for (var key in collection) {
+      if (!hasKey(what, key)) {
+        aux(collection, key); // prop list, key
       }
     }
-
-    // And now the properties
-    // Is there already a cache for this type's properties?
   } else {
-    // If yes, let's use the prop cache
-    // Inverse for loop, the order is not relevant here
-    inverseFor(prototypeNamesCache[curType], function (methodName) {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        methodName,
-        curType,
-        undefinedResultCallback
-      );
-    });
-    inverseFor(propCache[curType], function (prop) {
-      setPropOrMethod(
-        what,
-        curPrototype,
-        prop,
-        curType,
-        undefinedResultCallback
-      );
-    });
+    collection = hasKey(protoNames, curType)
+      ? protoNames[curType]
+      : (protoNames[curType] = Object.getOwnPropertyNames(curProto));
+
+    for (var len = collection.length; len--;) {
+      if (!hasKey(what, collection[len])) {
+        aux(curProto, collection[len]); // proto, key
+      }
+    }
   }
 }
 
 // Sets the set/get methods of a property as the Apheleia.prop method
-function propGetSetWithProp (obj, key) {
+function propGetSet (obj, key) {
   Object.defineProperty(obj, key, {
     get: function get () {
       return this.get(key)
@@ -458,13 +426,18 @@ var ignoreMethods = [
   'sort' ];
 
 Object.getOwnPropertyNames(arrayPrototype).forEach(function (key) {
-  if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
+  if (!~ignoreMethods.indexOf(key) && !hasKey(aph.fn, key)) {
     aph.fn[key] = arrayPrototype[key];
   }
 });
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(aph.fn, createElement('<div>'), function (instance) { return instance; });
+extendObjectPrototype(
+  aph.fn,
+  createElement('<div>'),
+  function (instance) { return instance; },
+  true
+);
 
 return aph;
 

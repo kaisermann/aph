@@ -1,10 +1,11 @@
 import Apheleia from './Apheleia.js'
 import { arrayPrototype, wrap } from './shared.js'
 import {
-  assignMethodsAndProperties,
+  extendObjectPrototype,
   createElement,
   aphParseContext,
   querySelector,
+  hasKey,
 } from './helpers.js'
 
 export default function aph (elems, context, metaObj) {
@@ -32,10 +33,15 @@ const ignoreMethods = [
 ]
 
 Object.getOwnPropertyNames(arrayPrototype).forEach(key => {
-  if (!~ignoreMethods.indexOf(key) && aph.fn[key] == null) {
+  if (!~ignoreMethods.indexOf(key) && !hasKey(aph.fn, key)) {
     aph.fn[key] = arrayPrototype[key]
   }
 })
 
 // Extending default HTMLElement methods and properties
-assignMethodsAndProperties(aph.fn, createElement('<div>'), instance => instance)
+extendObjectPrototype(
+  aph.fn,
+  createElement('<div>'),
+  instance => instance,
+  true
+)

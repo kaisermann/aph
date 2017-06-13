@@ -19,7 +19,7 @@ aph.fn['repeat'] = function (numberOfClones) {
 
 test('should accept an object as attributes setup', function (t) {
   aph(aElement).setAttribute({ style: 'width: 400px' })
-  t.is(aElement.style.width[0], '400px')
+  t.is(aElement.style.get('width')[0], '400px')
 })
 
 test('should accept an object as properties setup', function (t) {
@@ -50,13 +50,13 @@ test('should return true if at least one div has the specified class', function 
 
 test('should set single css attribute', function (t) {
   aph(aElement).css('opacity', 0.5)
-  t.is(aph(aElement).style.opacity[0], '0.5')
+  t.is(aph(aElement).style.get('opacity')[0], '0.5')
 })
 
 test('should set multiple css attribute', function (t) {
   aph(aElement).css({ display: 'inline', width: '500px' })
-  t.is(aph(aElement).style.width[0], '500px')
-  t.is(aph(aElement).style.display[0], 'inline')
+  t.is(aph(aElement).style.get('width')[0], '500px')
+  t.is(aph(aElement).style.get('display')[0], 'inline')
 })
 
 test('should get single css attribute from first element', function (t) {
