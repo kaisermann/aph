@@ -53,6 +53,15 @@ function wrap (what, owner) {
   return new Apheleia(acc, owner.aph.context, { owner: owner })
 }
 
+function hasKey (what, key) {
+  return typeof what[key] !== 'undefined'
+}
+
+function inverseFor (collection, cb) {
+  for (var len = collection.length; len--;) { cb(collection[len], len); }
+}
+
+// Check if what's passed is a string
 function isStr (maybeStr) {
   return typeof maybeStr === 'string'
 }
@@ -123,93 +132,120 @@ function createElement (str, match) {
   return docFragment.body.childNodes[0]
 }
 
-var prototypeCache = {};
+var wrappedMethodsCache = {};
+var prototypeNamesCache = {};
 var propCache = {};
+
+function setPropOrMethod (what, collection, key, curType, undefinedCallback) {
+  if (!hasKey(what, key)) {
+    try {
+      if (collection[key] instanceof Function) {
+        if (!wrappedMethodsCache[curType][key]) {
+          // Let's cache the wrapper function
+          // If we're dealing with a set method,
+          // should allow to pass a object as parameter
+          wrappedMethodsCache[curType][key] = key.substr(0, 3) === 'set' &&
+            key[key.length - 1] !== 's'
+            ? function () {
+              var args = arguments;
+              if (args.length === 1 && args[0].constructor === Object) {
+                return undefinedCallback(
+                    // this.forEach returns 'this'
+                    this.forEach(function (item) {
+                      for (var objKey in args[0]) {
+                        collection[key].call(item, objKey, args[0][objKey]);
+                      }
+                    })
+                  )
+              }
+
+              var result = this.map(function (i) { return collection[key].apply(i, args); });
+              return isRelevantCollection(result)
+                  ? result
+                  : undefinedCallback(this)
+            }
+            : function () {
+              var args = arguments;
+              var result = this.map(function (i) { return collection[key].apply(i, args); });
+              return isRelevantCollection(result)
+                  ? result
+                  : undefinedCallback(this)
+            };
+        }
+        what[key] = wrappedMethodsCache[curType][key];
+      } else {
+        propGetSetWithProp(what, key);
+      }
+    } catch (ex) {
+      // If we reach this exception, we are probably dealing with a property / getter / setter
+      propGetSetWithProp(what, key);
+    }
+  }
+}
 
 function assignMethodsAndProperties (
   what,
   propCollection,
   undefinedResultCallback
 ) {
-  var typeBeingDealtWith = propCollection.constructor.name;
+  var curType = propCollection.constructor.name;
 
   // If the wrapped methods cache doesn't exist for this variable type
   // Let's create it
-  if (!prototypeCache[typeBeingDealtWith]) {
-    prototypeCache[typeBeingDealtWith] = {};
-  }
-
-  function setProp (collection, key) {
-    if (what[key] == null) {
-      try {
-        if (collection[key] instanceof Function) {
-          if (!prototypeCache[typeBeingDealtWith][key]) {
-            // Let's cache the wrapper function
-            // If we're dealing with a set method,
-            // should allow to pass a object as parameter
-            prototypeCache[typeBeingDealtWith][key] = key.substr(0, 3) ===
-              'set' && key[key.length - 1] !== 's'
-              ? function () {
-                var args = arguments;
-                if (args.length === 1 && args[0].constructor === Object) {
-                  return undefinedResultCallback(
-                      // this.forEach returns 'this'
-                      this.forEach(function (item) {
-                        for (var objKey in args[0]) {
-                          collection[key].call(item, objKey, args[0][objKey]);
-                        }
-                      })
-                    )
-                }
-
-                var result = this.map(function (i) { return collection[key].apply(i, args); });
-                return isRelevantCollection(result)
-                    ? result
-                    : undefinedResultCallback(this)
-              }
-              : function () {
-                var args = arguments;
-                var result = this.map(function (i) { return collection[key].apply(i, args); });
-                return isRelevantCollection(result)
-                    ? result
-                    : undefinedResultCallback(this)
-              };
-          }
-          what[key] = prototypeCache[typeBeingDealtWith][key];
-        } else {
-          propGetSetWithProp(what, key);
-        }
-      } catch (ex) {
-        // If we reach this exception, we are probably dealing with a property / getter / setter
-        propGetSetWithProp(what, key);
-      }
-    }
-  }
-
-  // Let's get the methods first
   var curPrototype = Object.getPrototypeOf(propCollection);
-  var prototypeKeys = {};
-  Object.getOwnPropertyNames(curPrototype).forEach(function (methodName) {
-    setProp(curPrototype, methodName);
-    prototypeKeys[methodName] = 1;
-  });
+  if (!wrappedMethodsCache[curType]) {
+    var usedKeys = {};
+    prototypeNamesCache[curType] = Object.getOwnPropertyNames(curPrototype);
+    wrappedMethodsCache[curType] = {};
+    propCache[curType] = [];
 
-  // And now the properties
-  // Is there already a cache for this type's properties?
-  if (!propCache[typeBeingDealtWith]) {
-    propCache[typeBeingDealtWith] = [];
+    inverseFor(prototypeNamesCache[curType], function (methodName) {
+      setPropOrMethod(
+        what,
+        curPrototype,
+        methodName,
+        curType,
+        undefinedResultCallback
+      );
+      usedKeys[methodName] = 1;
+    });
+
     for (var key in propCollection) {
-      if (isNaN(key) && !prototypeKeys[key]) {
-        propCache[typeBeingDealtWith].push(key);
-        setProp(propCollection, key);
+      if (isNaN(key) && !hasKey(usedKeys, key)) {
+        propCache[curType].push(key);
+        setPropOrMethod(
+          what,
+          curPrototype,
+          key,
+          curType,
+          undefinedResultCallback
+        );
       }
     }
+
+    // And now the properties
+    // Is there already a cache for this type's properties?
   } else {
     // If yes, let's use the prop cache
     // Inverse for loop, the order is not relevant here
-    for (var len = propCache[typeBeingDealtWith].length; len--;) {
-      setProp(propCollection, propCache[typeBeingDealtWith][len]);
-    }
+    inverseFor(prototypeNamesCache[curType], function (methodName) {
+      setPropOrMethod(
+        what,
+        curPrototype,
+        methodName,
+        curType,
+        undefinedResultCallback
+      );
+    });
+    inverseFor(propCache[curType], function (prop) {
+      setPropOrMethod(
+        what,
+        curPrototype,
+        prop,
+        curType,
+        undefinedResultCallback
+      );
+    });
   }
 }
 

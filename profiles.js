@@ -68,6 +68,68 @@ const startProfiling = function (profile, libs) {
     () => jQueryCache.addClass('new-class-1 new-class-2 new-class-3'),
     () => ZeptoCache.addClass('new-class-1 new-class-2 new-class-3'),
   ])
+
+  profile('setting one attribute', [
+    () => aphCache.setAttribute('custom-attribute', 'test-value'),
+    () => cashCache.attr('custom-attribute', 'test-value'),
+    () => jQueryCache.attr('custom-attribute', 'test-value'),
+    () => ZeptoCache.attr('custom-attribute', 'test-value'),
+  ])
+
+  profile('setting multiple (3) attribute', [
+    () =>
+      aphCache.setAttribute({
+        'custom-attribute-1': 'test-value-1',
+        'custom-attribute-2': 'test-value-2',
+        'custom-attribute-3': 'test-value-3',
+      }),
+    () =>
+      cashCache.attr({
+        'custom-attribute-1': 'test-value-1',
+        'custom-attribute-2': 'test-value-2',
+        'custom-attribute-3': 'test-value-3',
+      }),
+    () =>
+      jQueryCache.attr({
+        'custom-attribute-1': 'test-value-1',
+        'custom-attribute-2': 'test-value-2',
+        'custom-attribute-3': 'test-value-3',
+      }),
+    () =>
+      ZeptoCache.attr({
+        'custom-attribute-1': 'test-value-1',
+        'custom-attribute-2': 'test-value-2',
+        'custom-attribute-3': 'test-value-3',
+      }),
+  ])
+
+  profile('setting css style (jquery like)', [
+    () => aphCache.css('background', 'red'),
+    () => cashCache.css('background', 'red'),
+    () => jQueryCache.css('background', 'red'),
+    () => ZeptoCache.css('background', 'red'),
+  ])
+
+  profile('setting css style (aph vanilla way)', [
+    () => (aphCache.style.background = 'red'),
+    () => cashCache.css('background', 'red'),
+    () => jQueryCache.css('background', 'red'),
+    () => ZeptoCache.css('background', 'red'),
+  ])
+
+  profile('getting css style (jquery like)', [
+    () => aphCache.css('background'),
+    () => cashCache.css('background'),
+    () => jQueryCache.css('background'),
+    () => ZeptoCache.css('background'),
+  ])
+
+  profile('getting css style (aph vanilla way)', [
+    () => aphCache.style.background,
+    () => cashCache.css('background'),
+    () => jQueryCache.css('background'),
+    () => ZeptoCache.css('background'),
+  ])
 }
 
 if (typeof exports === 'object' && typeof module !== 'undefined') {
