@@ -131,8 +131,7 @@ function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
-// This regex assumes the string begins with < and ends with >
-var singleTagRegEx = /(\w+)\/?>(?:<\/\1)?/i;
+var singleTagRegEx = /<(\w+)\/?>(?:<\/\1>)?/i;
 var docFragment;
 function createElement (str, match) {
   if ((match = singleTagRegEx.exec(str))) {

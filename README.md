@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (4.45 kbs minified and **1.6 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (4.61 kbs minified and **1.8 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -33,7 +33,7 @@ Yep, you read it right. Almost like Vanilla JS.
           background: 'pink',
           padding: 10
       })
-      .set('textContent', 'Ooooops') // I said 'almost like vanilla', right
+      .textContent = 'Ooooops'
   </script>
 </html>
 ```
@@ -118,19 +118,139 @@ Properties not available in `HTMLDivElement`, such as `href` on `<a>` elements, 
 
 ### But... what about performance?
 
-As you could guess it, for you to be able to write code as I showed you up there, `aph` must do some heavy lifting behind the curtains. I have done/am doing my best to cache results and improve performance where I can. This is a trade-off you have to decide for yourself.
+By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing).
 
 ##### Let's see some benchmarks (_lower is better_)
 
 ```
+Benchmark: Simple div creation
+  aph x 959,167 ops/sec ±4.44% (57 runs sampled)
+  cash x 193,441 ops/sec ±2.15% (52 runs sampled)
+  jQuery x 620,170 ops/sec ±3.18% (57 runs sampled)
+  Zepto x 387,367 ops/sec ±1.82% (58 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is cash
 
+Benchmark: Complex div creation
+  aph x 125,404 ops/sec ±2.98% (53 runs sampled)
+  cash x 123,620 ops/sec ±4.23% (48 runs sampled)
+  jQuery x 27,424 ops/sec ±9.45% (47 runs sampled)
+  Zepto x 38,587 ops/sec ±8.82% (46 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is jQuery
+
+Benchmark: Id selection
+  aph x 1,381,814 ops/sec ±18.06% (48 runs sampled)
+  cash x 1,990,307 ops/sec ±3.14% (56 runs sampled)
+  jQuery x 1,561,118 ops/sec ±10.37% (56 runs sampled)
+  Zepto x 1,840,907 ops/sec ±1.98% (58 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is aph
+
+Benchmark: Class selection
+  aph x 679,424 ops/sec ±7.84% (56 runs sampled)
+  cash x 798,323 ops/sec ±2.84% (59 runs sampled)
+  jQuery x 538,127 ops/sec ±6.58% (54 runs sampled)
+  Zepto x 315,302 ops/sec ±3.01% (57 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is Zepto
+
+Benchmark: Element selection
+  aph x 1,851,634 ops/sec ±2.33% (59 runs sampled)
+  cash x 1,299,823 ops/sec ±5.03% (59 runs sampled)
+  jQuery x 966,448 ops/sec ±3.05% (54 runs sampled)
+  Zepto x 1,170,820 ops/sec ±1.79% (58 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is jQuery
+
+Benchmark: Complex selection
+  aph x 658,141 ops/sec ±6.61% (46 runs sampled)
+  cash x 675,468 ops/sec ±7.40% (51 runs sampled)
+  jQuery x 500,321 ops/sec ±8.72% (53 runs sampled)
+  Zepto x 515,826 ops/sec ±4.74% (50 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is jQuery
+
+Benchmark: Adding one class
+  aph x 305,814 ops/sec ±1.44% (60 runs sampled)
+  cash x 521,141 ops/sec ±1.05% (61 runs sampled)
+  jQuery x 150,981 ops/sec ±0.74% (61 runs sampled)
+  Zepto x 93,624 ops/sec ±5.39% (56 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is Zepto
+
+Benchmark: Adding multiple (3) class
+  aph x 253,763 ops/sec ±1.31% (58 runs sampled)
+  cash x 169,596 ops/sec ±1.95% (59 runs sampled)
+  jQuery x 85,870 ops/sec ±0.83% (62 runs sampled)
+  Zepto x 29,382 ops/sec ±0.79% (61 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is Zepto
+
+Benchmark: Setting one attribute
+  aph x 453,059 ops/sec ±1.97% (60 runs sampled)
+  cash x 752,550 ops/sec ±5.99% (52 runs sampled)
+  jQuery x 334,964 ops/sec ±2.81% (60 runs sampled)
+  Zepto x 293,503 ops/sec ±0.69% (62 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is Zepto
+
+Benchmark: Setting multiple (3) attribute
+  aph x 229,103 ops/sec ±3.74% (58 runs sampled)
+  cash x 248,571 ops/sec ±0.90% (62 runs sampled)
+  jQuery x 101,650 ops/sec ±4.28% (59 runs sampled)
+  Zepto x 182,067 ops/sec ±1.75% (61 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is jQuery
+
+Benchmark: Getting css style (of all elements) - jQuery like
+  aph x 34,608 ops/sec ±10.74% (45 runs sampled)
+  cash x 475,026 ops/sec ±13.95% (58 runs sampled)
+  jQuery x 436,623 ops/sec ±1.87% (57 runs sampled)
+  Zepto x 297,087 ops/sec ±1.24% (58 runs sampled)
+  ----------------------------
+  Fastest is jQuery
+  Slowest is aph
+
+Benchmark: Getting css style (of all elements) - aph vanilla like
+  aph x 261,804 ops/sec ±1.38% (58 runs sampled)
+  cash x 509,581 ops/sec ±5.61% (59 runs sampled)
+  jQuery x 449,553 ops/sec ±1.04% (60 runs sampled)
+  Zepto x 275,834 ops/sec ±9.66% (62 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is Zepto
+
+Benchmark: Setting css style - jQuery like
+  aph x 135,642 ops/sec ±3.54% (56 runs sampled)
+  cash x 107,408 ops/sec ±2.91% (57 runs sampled)
+  jQuery x 84,212 ops/sec ±22.90% (59 runs sampled)
+  Zepto x 24,581 ops/sec ±12.43% (35 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is Zepto
+
+Benchmark: Setting css style - aph vanilla like
+  aph x 62,570 ops/sec ±15.22% (42 runs sampled)
+  cash x 106,431 ops/sec ±4.69% (58 runs sampled)
+  jQuery x 95,453 ops/sec ±1.25% (59 runs sampled)
+  Zepto x 43,774 ops/sec ±1.85% (60 runs sampled)
+  ----------------------------
+  Fastest is cash
+  Slowest is Zepto
 ```
 
-You can run the benchmarks by opening the `benchmark.html` for the browser benchmark or by using `yarn run benchmark` for the node benchmark.
-
-Obs¹: The benchmark results vary a little bit between executions, sometimes a library runs faster than the others.
-
-Obs²: for some reason, the node benchmark does not complete the class and style profiles.
+You can run the benchmarks by opening the `benchmark.html`. The benchmark results vary a little bit between executions, sometimes a library runs faster than the others.
 
 Have some benchmarks to show me? I'll be more than thankful!
 <br>
