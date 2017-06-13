@@ -1,3 +1,4 @@
+import Apheleia from './Apheleia.js'
 import { doc } from './shared.js'
 
 export function hasKey (what, key) {
@@ -9,18 +10,18 @@ export function isStr (maybeStr) {
   return typeof maybeStr === 'string'
 }
 
+export function isFn (maybeFn) {
+  return typeof maybeFn === 'function'
+}
+
 // Check if what's passed is to be considered a colletion
 export function isArrayLike (maybeCollection) {
   return (
     maybeCollection &&
     !isStr(maybeCollection) &&
-    typeof maybeCollection !== 'function' &&
-    maybeCollection.length != null
+    !isFn(maybeCollection) &&
+    hasKey(maybeCollection, 'length')
   )
-}
-
-export function isRelevantCollection (collection) {
-  return collection[0] != null || collection[collection.length - 1] != null
 }
 
 // Queries a selector
@@ -49,12 +50,12 @@ export function aphParseContext (elemOrAphOrStr) {
   return !elemOrAphOrStr
     ? doc // Defaults to the document
     : elemOrAphOrStr instanceof Node
-        ? elemOrAphOrStr // If already a html element
-        : isStr(elemOrAphOrStr)
-            ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
-            : isArrayLike(elemOrAphOrStr)
-                ? elemOrAphOrStr[0] // If already an collection
-                : doc // Return the document if nothing else...
+      ? elemOrAphOrStr // If already a html element
+      : isStr(elemOrAphOrStr)
+        ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
+        : isArrayLike(elemOrAphOrStr)
+          ? elemOrAphOrStr[0] // If already an collection
+          : doc // Return the document if nothing else...
 }
 
 // Parses the elements passed to aph()
@@ -75,101 +76,54 @@ export function createElement (str, match) {
   return docFragment.body.childNodes[0]
 }
 
+// Wraps a object method making it work with collections natively and caches it
 const wrappedMethodsCache = {}
-export function wrapPrototypeMethod (
-  what,
-  methodName,
-  method,
-  curType,
-  undefinedCallback
-) {
-  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
-    // Let's cache the wrapper function
-    // If we're dealing with a set method,
-    // should allow to pass a object as parameter
-    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
-      'set' && methodName[methodName.length - 1] !== 's'
-      ? function () {
-        const args = arguments
-        if (args.length === 1 && args[0].constructor === Object) {
-          return undefinedCallback(
-              // this.forEach returns 'this'
-              this.forEach(item => {
-                for (const objKey in args[0]) {
-                  method.call(item, objKey, args[0][objKey])
-                }
-              })
-            )
-        }
 
-        const result = this.map(i => method.apply(i, args))
-        return isRelevantCollection(result) ? result : undefinedCallback(this)
-      }
-      : function () {
-        const args = arguments
-        const result = this.map(i => method.apply(i, args))
-        return isRelevantCollection(result) ? result : undefinedCallback(this)
-      }
-  }
-  what[methodName] = wrappedMethodsCache[curType][methodName]
+function auxMap (overWhat, methodName, args) {
+  const result = overWhat.map(i => i[methodName].apply(i, args))
+  return result[0] != null || result[result.length - 1] != null
+    ? result
+    : getAphOwner(overWhat)
 }
 
-const protoNames = {}
-export function extendObjectPrototype (
-  what,
-  collection,
-  undefinedResultCallback,
-  shouldExtendProps
-) {
-  const { name: curType, prototype: curProto } = collection.constructor
+function getAphOwner (what) {
+  while (!(what.constructor === Apheleia)) what = what.aph.owner
+  return what
+}
+
+export function wrapPrototypeMethod (methodName, sample) {
+  const curType = sample.constructor.name
 
   if (!hasKey(wrappedMethodsCache, curType)) {
     wrappedMethodsCache[curType] = {}
   }
 
-  function aux (collection, key) {
-    try {
-      if (collection[key] instanceof Function) {
-        wrapPrototypeMethod(
-          what,
-          key,
-          collection[key],
-          curType,
-          undefinedResultCallback
-        )
-      } else if (shouldExtendProps) propGetSet(what, key)
-    } catch (ex) {
-      if (shouldExtendProps) propGetSet(what, key)
-    }
-  }
+  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
+    // Let's cache the wrapper function
+    // If we're dealing with a set method,
+    // should allow to pass a object as parameter
+    const isSetMethod =
+      methodName.substr(0, 3) === 'set' &&
+      methodName[methodName.length - 1] !== 's'
 
-  if (shouldExtendProps) {
-    for (const key in collection) {
-      if (!hasKey(what, key)) {
-        aux(collection, key) // prop list, key
+    wrappedMethodsCache[curType][methodName] = isSetMethod
+      ? function () {
+        const args = arguments
+        if (args.length === 1 && args[0].constructor === Object) {
+          return getAphOwner(
+              // this.forEach returns 'this'
+              this.forEach(item => {
+                for (const objKey in args[0]) {
+                  item[methodName](objKey, args[0][objKey])
+                }
+              })
+            )
+        }
+        return auxMap(this, methodName, args)
       }
-    }
-  } else {
-    collection = hasKey(protoNames, curType)
-      ? protoNames[curType]
-      : (protoNames[curType] = Object.getOwnPropertyNames(curProto))
-
-    for (let len = collection.length; len--;) {
-      if (!hasKey(what, collection[len])) {
-        aux(curProto, collection[len]) // proto, key
+      : function () {
+        return auxMap(this, methodName, arguments)
       }
-    }
   }
-}
-
-// Sets the set/get methods of a property as the Apheleia.prop method
-export function propGetSet (obj, key) {
-  Object.defineProperty(obj, key, {
-    get () {
-      return this.get(key)
-    },
-    set (value) {
-      this.set(key, value)
-    },
-  })
+  return wrappedMethodsCache[curType][methodName]
 }

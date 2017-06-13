@@ -7,16 +7,18 @@
 var arrayPrototype = Array.prototype;
 var doc = document;
 
-function aphSetWrapper () {
-  Apheleia.prototype.set.apply(this, arguments);
+function aphSetWrapper (objOrKey, nothingOrValue) {
+  Apheleia.prototype.set.call(this, objOrKey, nothingOrValue);
   return this.aph.owner
 }
 
+var defaultWrapperMethods = ['map', 'filter', 'forEach', 'get'];
 function wrap (what, owner) {
   var acc = [];
 
   for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
     item = what[i];
+
     if (item == null) { continue }
 
     if (item.nodeType === 1) {
@@ -25,9 +27,9 @@ function wrap (what, owner) {
         acc.push(item);
       }
     } else if (
-      ((item instanceof NodeList || item instanceof Array) &&
+      ((item instanceof NodeList || item.constructor instanceof Array) &&
         item[0].nodeType === 1) ||
-      item instanceof Apheleia ||
+      item.constructor === Apheleia ||
       item instanceof HTMLCollection
     ) {
       // If we received a node list/collection
@@ -37,20 +39,38 @@ function wrap (what, owner) {
         }
       }
     } else {
-      var methodsToBeCopied = ['map', 'filter', 'forEach', 'get', 'call'];
-      methodsToBeCopied.forEach(function (key) {
+      defaultWrapperMethods.forEach(function (key) {
         what[key] = Apheleia.prototype[key];
       });
       what.set = aphSetWrapper;
       what.aph = { owner: owner };
 
-      extendObjectPrototype(what, item, function (instance) { return instance.aph.owner; });
+      // Returns a proxy which allows to access methods and properties
+      // of the list items type.
+      return new Proxy(what, {
+        set: function set (target, propKey, val) {
+          target.set(propKey, val);
+        },
+        get: function get (target, propKey) {
+          if (hasKey(target, propKey)) {
+            return target[propKey]
+          }
 
-      return what
+          if (isFn(target[0][propKey])) {
+            return wrapPrototypeMethod(propKey, target[0]).bind(target)
+          }
+
+          if (!hasKey(target[0], propKey)) {
+            return undefined
+          }
+
+          return target.map(function (i) { return i[propKey]; })
+        },
+      })
     }
   }
 
-  return new Apheleia(acc, owner.aph.context, { owner: owner })
+  return new Apheleia(acc, owner ? owner.aph.context : null, { owner: owner })
 }
 
 function hasKey (what, key) {
@@ -62,18 +82,18 @@ function isStr (maybeStr) {
   return typeof maybeStr === 'string'
 }
 
+function isFn (maybeFn) {
+  return typeof maybeFn === 'function'
+}
+
 // Check if what's passed is to be considered a colletion
 function isArrayLike (maybeCollection) {
   return (
     maybeCollection &&
     !isStr(maybeCollection) &&
-    typeof maybeCollection !== 'function' &&
-    maybeCollection.length != null
+    !isFn(maybeCollection) &&
+    hasKey(maybeCollection, 'length')
   )
-}
-
-function isRelevantCollection (collection) {
-  return collection[0] != null || collection[collection.length - 1] != null
 }
 
 // Queries a selector
@@ -102,12 +122,12 @@ function aphParseContext (elemOrAphOrStr) {
   return !elemOrAphOrStr
     ? doc // Defaults to the document
     : elemOrAphOrStr instanceof Node
-        ? elemOrAphOrStr // If already a html element
-        : isStr(elemOrAphOrStr)
-            ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
-            : isArrayLike(elemOrAphOrStr)
-                ? elemOrAphOrStr[0] // If already an collection
-                : doc // Return the document if nothing else...
+      ? elemOrAphOrStr // If already a html element
+      : isStr(elemOrAphOrStr)
+        ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
+        : isArrayLike(elemOrAphOrStr)
+          ? elemOrAphOrStr[0] // If already an collection
+          : doc // Return the document if nothing else...
 }
 
 // Parses the elements passed to aph()
@@ -128,105 +148,56 @@ function createElement (str, match) {
   return docFragment.body.childNodes[0]
 }
 
+// Wraps a object method making it work with collections natively and caches it
 var wrappedMethodsCache = {};
-function wrapPrototypeMethod (
-  what,
-  methodName,
-  method,
-  curType,
-  undefinedCallback
-) {
-  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
-    // Let's cache the wrapper function
-    // If we're dealing with a set method,
-    // should allow to pass a object as parameter
-    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
-      'set' && methodName[methodName.length - 1] !== 's'
-      ? function () {
-        var args = arguments;
-        if (args.length === 1 && args[0].constructor === Object) {
-          return undefinedCallback(
-              // this.forEach returns 'this'
-              this.forEach(function (item) {
-                for (var objKey in args[0]) {
-                  method.call(item, objKey, args[0][objKey]);
-                }
-              })
-            )
-        }
 
-        var result = this.map(function (i) { return method.apply(i, args); });
-        return isRelevantCollection(result) ? result : undefinedCallback(this)
-      }
-      : function () {
-        var args = arguments;
-        var result = this.map(function (i) { return method.apply(i, args); });
-        return isRelevantCollection(result) ? result : undefinedCallback(this)
-      };
-  }
-  what[methodName] = wrappedMethodsCache[curType][methodName];
+function auxMap (overWhat, methodName, args) {
+  var result = overWhat.map(function (i) { return i[methodName].apply(i, args); });
+  return result[0] != null || result[result.length - 1] != null
+    ? result
+    : getAphOwner(overWhat)
 }
 
-var protoNames = {};
-function extendObjectPrototype (
-  what,
-  collection,
-  undefinedResultCallback,
-  shouldExtendProps
-) {
-  var ref = collection.constructor;
-  var curType = ref.name;
-  var curProto = ref.prototype;
+function getAphOwner (what) {
+  while (!(what.constructor === Apheleia)) { what = what.aph.owner; }
+  return what
+}
+
+function wrapPrototypeMethod (methodName, sample) {
+  var curType = sample.constructor.name;
 
   if (!hasKey(wrappedMethodsCache, curType)) {
     wrappedMethodsCache[curType] = {};
   }
 
-  function aux (collection, key) {
-    try {
-      if (collection[key] instanceof Function) {
-        wrapPrototypeMethod(
-          what,
-          key,
-          collection[key],
-          curType,
-          undefinedResultCallback
-        );
-      } else if (shouldExtendProps) { propGetSet(what, key); }
-    } catch (ex) {
-      if (shouldExtendProps) { propGetSet(what, key); }
-    }
-  }
+  if (!hasKey(wrappedMethodsCache[curType], methodName)) {
+    // Let's cache the wrapper function
+    // If we're dealing with a set method,
+    // should allow to pass a object as parameter
+    var isSetMethod =
+      methodName.substr(0, 3) === 'set' &&
+      methodName[methodName.length - 1] !== 's';
 
-  if (shouldExtendProps) {
-    for (var key in collection) {
-      if (!hasKey(what, key)) {
-        aux(collection, key); // prop list, key
+    wrappedMethodsCache[curType][methodName] = isSetMethod
+      ? function () {
+        var args = arguments;
+        if (args.length === 1 && args[0].constructor === Object) {
+          return getAphOwner(
+              // this.forEach returns 'this'
+              this.forEach(function (item) {
+                for (var objKey in args[0]) {
+                  item[methodName](objKey, args[0][objKey]);
+                }
+              })
+            )
+        }
+        return auxMap(this, methodName, args)
       }
-    }
-  } else {
-    collection = hasKey(protoNames, curType)
-      ? protoNames[curType]
-      : (protoNames[curType] = Object.getOwnPropertyNames(curProto));
-
-    for (var len = collection.length; len--;) {
-      if (!hasKey(what, collection[len])) {
-        aux(curProto, collection[len]); // proto, key
-      }
-    }
+      : function () {
+        return auxMap(this, methodName, arguments)
+      };
   }
-}
-
-// Sets the set/get methods of a property as the Apheleia.prop method
-function propGetSet (obj, key) {
-  Object.defineProperty(obj, key, {
-    get: function get () {
-      return this.get(key)
-    },
-    set: function set (value) {
-      this.set(key, value);
-    },
-  });
+  return wrappedMethodsCache[curType][methodName]
 }
 
 var Apheleia = function Apheleia (elems, context, aphMetaObj) {
@@ -254,20 +225,6 @@ var Apheleia = function Apheleia (elems, context, aphMetaObj) {
   }
 };
 
-Apheleia.prototype.call = function call (fn) {
-  var args = arguments;
-  var result = this.map(function (elem, result) { return elem[fn].apply(elem, args); });
-  return isRelevantCollection(result) ? result : this
-};
-
-Apheleia.prototype.map = function map () {
-  return wrap(arrayPrototype.map.apply(this, arguments), this)
-};
-
-Apheleia.prototype.filter = function filter () {
-  return wrap(arrayPrototype.filter.apply(this, arguments), this)
-};
-
 // Iterates through the elements with a 'callback(element, index)''
 Apheleia.prototype.forEach = function forEach (cb) {
   // Iterates through the Apheleia object.
@@ -278,6 +235,16 @@ Apheleia.prototype.forEach = function forEach (cb) {
 
   ){  }
   return this
+};
+
+Apheleia.prototype.map = function map (cb) {
+  var result = [];
+  for (var len = this.length; len--; result[len] = cb(this[len], len, this)){  }
+  return wrap(result, this)
+};
+
+Apheleia.prototype.filter = function filter (cb) {
+  return wrap(arrayPrototype.filter.call(this, cb), this)
 };
 
 // Creates a new Apheleia instance with the elements found.
@@ -296,17 +263,17 @@ Apheleia.prototype.get = function get (key) {
 };
 
 Apheleia.prototype.set = function set (objOrKey, nothingOrValue) {
-  if (typeof objOrKey !== 'object') {
-    return this.forEach(function (elem) {
-      elem[objOrKey] = nothingOrValue;
-    })
-  }
-
-  return this.forEach(function (elem) {
-    for (var key in objOrKey) {
-      elem[key] = objOrKey[key];
-    }
-  })
+  return this.forEach(
+    typeof objOrKey !== 'object'
+      ? function (elem) {
+        elem[objOrKey] = nothingOrValue;
+      }
+      : function (elem) {
+        for (var key in objOrKey) {
+          elem[key] = objOrKey[key];
+        }
+      }
+  )
 };
 
 // Sets CSS or gets the computed value
@@ -412,32 +379,46 @@ aph.querySelector = function (selector, context) {
   querySelector(selector, aphParseContext(context));
 };
 
-// Extending the Array Prototype
-// Irrelevant methods on the context of an Apheleia Collection
-var ignoreMethods = [
+var irrelevantArrayMethods = [
   'concat',
   'copyWithin',
   'fill',
   'join',
   'reduce',
   'reduceRight',
-  'slice',
   'splice',
-  'sort' ];
+  'sort',
+  'slice' ];
 
+// Extending the Array Prototype
+// Irrelevant methods on the context of an Apheleia Collection
 Object.getOwnPropertyNames(arrayPrototype).forEach(function (key) {
-  if (!~ignoreMethods.indexOf(key) && !hasKey(aph.fn, key)) {
+  if (!~irrelevantArrayMethods.indexOf(key) && !hasKey(aph.fn, key)) {
     aph.fn[key] = arrayPrototype[key];
   }
 });
 
-// Extending default HTMLElement methods and properties
-extendObjectPrototype(
-  aph.fn,
-  createElement('<div>'),
-  function (instance) { return instance; },
-  true
-);
+// Extending default HTMLDivElement methods and properties
+var aDiv = createElement('<div>');
+var loop = function ( propKey ) {
+  if (!hasKey(aph.fn, propKey)) {
+    if (isFn(aDiv[propKey])) {
+      aph.fn[propKey] = wrapPrototypeMethod(propKey, aDiv);
+    } else {
+      Object.defineProperty(aph.fn, propKey, {
+        get: function get () {
+          return this.get(propKey)
+        },
+        set: function set (value) {
+          this.set(propKey, value);
+        },
+      });
+    }
+  }
+};
+
+for (var propKey in aDiv) loop( propKey );
+aDiv = null;
 
 return aph;
 

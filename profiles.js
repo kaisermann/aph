@@ -1,6 +1,10 @@
 const startProfiling = function (profile, libs) {
   const [aph, cash, jQuery, Zepto] = libs
 
+  cash.fn.map = function (cb) {
+    return cash(Array.prototype.map.call(this, cb))
+  }
+
   aph('body').append([
     aph('<div id="test-id">'),
     aph('<span class="test-class">').repeat(5),
@@ -21,10 +25,10 @@ const startProfiling = function (profile, libs) {
   ])
 
   profile('Complex div creation', [
-    () => aph('<div style="background-color: pink">Opa!!</div>'),
-    () => cash('<div style="background-color: pink">Opa!!</div>'),
-    () => jQuery('<div style="background-color: pink">Opa!!</div>'),
-    () => Zepto('<div style="background-color: pink">Opa!!</div>'),
+    () => aph('<div style="background-color: pink">Hello!!</div>'),
+    () => cash('<div style="background-color: pink">Hello!!</div>'),
+    () => jQuery('<div style="background-color: pink">Hello!!</div>'),
+    () => Zepto('<div style="background-color: pink">Hello!!</div>'),
   ])
 
   profile('Id selection', [
@@ -103,26 +107,32 @@ const startProfiling = function (profile, libs) {
       }),
   ])
 
-  profile('Setting css style (jquery like)', [
-    () => aphCache.css('background', 'red'),
-    () => cashCache.css('background', 'red'),
-    () => jQueryCache.css('background', 'red'),
-    () => ZeptoCache.css('background', 'red'),
-  ])
-
-  profile('Setting css style (aph semi-vanilla way)', [
-    () => aphCache.style.set('background', 'red'),
-  ])
-
   profile('Getting css style (jquery like)', [
     () => aphCache.css('background'),
-    () => cashCache.css('background'),
-    () => jQueryCache.css('background'),
-    () => ZeptoCache.css('background'),
+    () => cashCache.map((item, i) => item.style.background),
+    () => jQueryCache.map((i, item) => item.style.background),
+    () => ZeptoCache.map((i, item) => item.style.background),
   ])
 
-  profile('Getting css style (aph semi-vanilla way)', [
-    () => aphCache.style.get('background'),
+  profile('Getting css style (aph vanilla way)', [
+    () => aphCache.style.background,
+    () => cashCache.map((item, i) => item.style.background),
+    () => jQueryCache.map((i, item) => item.style.background),
+    () => ZeptoCache.map((i, item) => item.style.background),
+  ])
+
+  profile('Setting css style (jquery like)', [
+    () => aphCache.css('background', 'green'),
+    () => cashCache.css('background', 'green'),
+    () => jQueryCache.css('background', 'green'),
+    () => ZeptoCache.css('background', 'green'),
+  ])
+
+  profile('Setting css style (aph vanilla way)', [
+    () => (aphCache.style.background = 'green'),
+    () => cashCache.css('background', 'green'),
+    () => jQueryCache.css('background', 'green'),
+    () => ZeptoCache.css('background', 'green'),
   ])
 }
 

@@ -37,9 +37,9 @@ test('should extend the current collection with default Apheleia methods', funct
   const aInstance = aph('<div>')
   t.is(typeof aInstance.classList.set, 'function')
   t.is(typeof aInstance.classList.get, 'function')
-  t.is(typeof aInstance.classList.call, 'function')
   t.is(typeof aInstance.classList.forEach, 'function')
   t.is(typeof aInstance.classList.filter, 'function')
+  t.is(typeof aInstance.classList.aph, 'object')
 })
 
 test('should recursively extend the current collection with its item prototype and methods', function (

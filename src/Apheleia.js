@@ -2,7 +2,6 @@ import {
   isStr,
   isArrayLike,
   createElement,
-  isRelevantCollection,
   aphParseContext,
   querySelector,
 } from './helpers.js'
@@ -35,20 +34,6 @@ export default class Apheleia {
     }
   }
 
-  call (fn) {
-    const args = arguments
-    const result = this.map((elem, result) => elem[fn].apply(elem, args))
-    return isRelevantCollection(result) ? result : this
-  }
-
-  map () {
-    return wrap(arrayPrototype.map.apply(this, arguments), this)
-  }
-
-  filter () {
-    return wrap(arrayPrototype.filter.apply(this, arguments), this)
-  }
-
   // Iterates through the elements with a 'callback(element, index)''
   forEach (cb) {
     // Iterates through the Apheleia object.
@@ -59,6 +44,16 @@ export default class Apheleia {
 
     );
     return this
+  }
+
+  map (cb) {
+    const result = []
+    for (let len = this.length; len--; result[len] = cb(this[len], len, this));
+    return wrap(result, this)
+  }
+
+  filter (cb) {
+    return wrap(arrayPrototype.filter.call(this, cb), this)
   }
 
   // Creates a new Apheleia instance with the elements found.
@@ -77,17 +72,17 @@ export default class Apheleia {
   }
 
   set (objOrKey, nothingOrValue) {
-    if (typeof objOrKey !== 'object') {
-      return this.forEach(function (elem) {
-        elem[objOrKey] = nothingOrValue
-      })
-    }
-
-    return this.forEach(function (elem) {
-      for (const key in objOrKey) {
-        elem[key] = objOrKey[key]
-      }
-    })
+    return this.forEach(
+      typeof objOrKey !== 'object'
+        ? function (elem) {
+          elem[objOrKey] = nothingOrValue
+        }
+        : function (elem) {
+          for (const key in objOrKey) {
+            elem[key] = objOrKey[key]
+          }
+        }
+    )
   }
 
   // Sets CSS or gets the computed value

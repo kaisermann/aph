@@ -1,11 +1,12 @@
 import Apheleia from './Apheleia.js'
 import { arrayPrototype, wrap } from './shared.js'
 import {
-  extendObjectPrototype,
+  wrapPrototypeMethod,
   createElement,
   aphParseContext,
   querySelector,
   hasKey,
+  isFn,
 } from './helpers.js'
 
 export default function aph (elems, context, metaObj) {
@@ -18,30 +19,42 @@ aph.querySelector = function (selector, context) {
   querySelector(selector, aphParseContext(context))
 }
 
-// Extending the Array Prototype
-// Irrelevant methods on the context of an Apheleia Collection
-const ignoreMethods = [
+const irrelevantArrayMethods = [
   'concat',
   'copyWithin',
   'fill',
   'join',
   'reduce',
   'reduceRight',
-  'slice',
   'splice',
   'sort',
+  'slice',
 ]
 
+// Extending the Array Prototype
+// Irrelevant methods on the context of an Apheleia Collection
 Object.getOwnPropertyNames(arrayPrototype).forEach(key => {
-  if (!~ignoreMethods.indexOf(key) && !hasKey(aph.fn, key)) {
+  if (!~irrelevantArrayMethods.indexOf(key) && !hasKey(aph.fn, key)) {
     aph.fn[key] = arrayPrototype[key]
   }
 })
 
-// Extending default HTMLElement methods and properties
-extendObjectPrototype(
-  aph.fn,
-  createElement('<div>'),
-  instance => instance,
-  true
-)
+// Extending default HTMLDivElement methods and properties
+let aDiv = createElement('<div>')
+for (const propKey in aDiv) {
+  if (!hasKey(aph.fn, propKey)) {
+    if (isFn(aDiv[propKey])) {
+      aph.fn[propKey] = wrapPrototypeMethod(propKey, aDiv)
+    } else {
+      Object.defineProperty(aph.fn, propKey, {
+        get () {
+          return this.get(propKey)
+        },
+        set (value) {
+          this.set(propKey, value)
+        },
+      })
+    }
+  }
+}
+aDiv = null
