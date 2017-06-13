@@ -13,70 +13,70 @@ const startProfiling = function (profile, libs) {
   const jQueryCache = jQuery('span')
   const ZeptoCache = Zepto('span')
 
-  profile('simple div creation', [
+  profile('Simple div creation', [
     () => aph('<div>'),
     () => cash('<div>'),
     () => jQuery('<div>'),
     () => Zepto('<div>'),
   ])
 
-  profile('complex div creation', [
+  profile('Complex div creation', [
     () => aph('<div style="background-color: pink">Opa!!</div>'),
     () => cash('<div style="background-color: pink">Opa!!</div>'),
     () => jQuery('<div style="background-color: pink">Opa!!</div>'),
     () => Zepto('<div style="background-color: pink">Opa!!</div>'),
   ])
 
-  profile('id selection', [
+  profile('Id selection', [
     () => aph('#test-id'),
     () => cash('#test-id'),
     () => jQuery('#test-id'),
     () => Zepto('#test-id'),
   ])
 
-  profile('class selection', [
+  profile('Class selection', [
     () => aph('.test-class'),
     () => cash('.test-class'),
     () => jQuery('.test-class'),
     () => Zepto('.test-class'),
   ])
 
-  profile('element selection', [
+  profile('Element selection', [
     () => aph('h1'),
     () => cash('h1'),
     () => jQuery('h1'),
     () => Zepto('h1'),
   ])
 
-  profile('complex selection', [
+  profile('Complex selection', [
     () => aph('body h2[data-attribute="test"]'),
     () => cash('body h2[data-attribute="test"]'),
     () => jQuery('body h2[data-attribute="test"]'),
     () => Zepto('body h2[data-attribute="test"]'),
   ])
 
-  profile('adding one class', [
+  profile('Adding one class', [
     () => aphCache.classList.add('new-class-0'),
     () => cashCache.addClass('new-class-0'),
     () => jQueryCache.addClass('new-class-0'),
     () => ZeptoCache.addClass('new-class-0'),
   ])
 
-  profile('adding multiple (3) class', [
+  profile('Adding multiple (3) class', [
     () => aphCache.classList.add('new-class-1', 'new-class-2', 'new-class-3'),
     () => cashCache.addClass('new-class-1 new-class-2 new-class-3'),
     () => jQueryCache.addClass('new-class-1 new-class-2 new-class-3'),
     () => ZeptoCache.addClass('new-class-1 new-class-2 new-class-3'),
   ])
 
-  profile('setting one attribute', [
+  profile('Setting one attribute', [
     () => aphCache.setAttribute('custom-attribute', 'test-value'),
     () => cashCache.attr('custom-attribute', 'test-value'),
     () => jQueryCache.attr('custom-attribute', 'test-value'),
     () => ZeptoCache.attr('custom-attribute', 'test-value'),
   ])
 
-  profile('setting multiple (3) attribute', [
+  profile('Setting multiple (3) attribute', [
     () =>
       aphCache.setAttribute({
         'custom-attribute-1': 'test-value-1',
@@ -103,29 +103,26 @@ const startProfiling = function (profile, libs) {
       }),
   ])
 
-  profile('setting css style (jquery like)', [
+  profile('Setting css style (jquery like)', [
     () => aphCache.css('background', 'red'),
     () => cashCache.css('background', 'red'),
     () => jQueryCache.css('background', 'red'),
     () => ZeptoCache.css('background', 'red'),
   ])
 
-  profile('setting css style (aph semi-vanilla way)', [
+  profile('Setting css style (aph semi-vanilla way)', [
     () => aphCache.style.set('background', 'red'),
   ])
 
-  profile('getting css style (jquery like)', [
+  profile('Getting css style (jquery like)', [
     () => aphCache.css('background'),
     () => cashCache.css('background'),
     () => jQueryCache.css('background'),
     () => ZeptoCache.css('background'),
   ])
 
-  profile('getting css style (aph vanilla way)', [
+  profile('Getting css style (aph semi-vanilla way)', [
     () => aphCache.style.get('background'),
-    () => cashCache.css('background'),
-    () => jQueryCache.css('background'),
-    () => ZeptoCache.css('background'),
   ])
 }
 
