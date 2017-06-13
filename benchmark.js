@@ -21,13 +21,6 @@ aph.fn.repeat = function (numberOfClones) {
   return aph(repeatedElements, this.context, this)
 }
 
-aph('body').append([
-  aph('<div id="test-id">'),
-  aph('<span class="test-class">').repeat(5),
-  aph('<h1>Heading 1</h1>').repeat(2),
-  aph('<h2 data-attribute="test">Heading 2</h2>').repeat(2),
-])
-
 const scriptNames = ['aph', 'cash', 'jQuery', 'Zepto']
 function profile (name, tests) {
   const suite = new Benchmark.Suite(name)
@@ -40,6 +33,7 @@ function profile (name, tests) {
     .on('complete', function () {
       const fastest = this.filter('fastest').map('name')
       const slowest = this.filter('slowest').map('name')
+
       console.log(
         `\nFastest is ${fastest}`[~fastest.indexOf('aph') ? 'bgCyan' : 'bgRed']
       )
@@ -49,32 +43,6 @@ function profile (name, tests) {
     .run()
 }
 
-profile('id selection', [
-  () => aph('#test-id'),
-  () => cash('#test-id'),
-  () => jQuery('#test-id'),
-  () => Zepto('#test-id'),
-])
-
-profile('class selection', [
-  () => aph('.test-class'),
-  () => cash('.test-class'),
-  () => jQuery('.test-class'),
-  () => Zepto('.test-class'),
-])
-
-profile('element selection', [
-  () => aph('h1'),
-  () => cash('h1'),
-  () => jQuery('h1'),
-  () => Zepto('h1'),
-])
-
-profile('complex selection', [
-  () => aph('body h2[data-attribute="test"]'),
-  () => cash('body h2[data-attribute="test"]'),
-  () => jQuery('body h2[data-attribute="test"]'),
-  () => Zepto('body h2[data-attribute="test"]'),
-])
+require('./profiles.js')(profile, [aph, cash, jQuery, Zepto])
 
 process.exit()

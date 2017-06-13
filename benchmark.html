@@ -1,0 +1,67 @@
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>aph vs jQuery vs cash vs Zepto - Benchmark</title>
+	<style>
+		div, span, h1, h2 {
+			display: block;
+			border: 1px solid;
+			width: 100px;
+			height: 100px;
+			margin: 5px
+		}
+
+		div { background-color: red; }
+
+		span { height: 50px; background-color: green; }
+
+		h1 { background-color: blue; }
+		h2 { background-color: darkBlue; }
+	</style>
+</head>
+
+<body>
+	<script type="text/javascript" src="./dist/aph.js"></script>
+	<script type="text/javascript" src="./plugins.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+	<script src="https://rawgit.com/kenwheeler/cash/master/dist/cash.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.js"></script>
+
+	<script>
+		const scriptNames = ['aph', 'cash', 'jQuery', 'Zepto']
+
+		function runFn(fn, i) {
+			const t0 = performance.now();
+			for (var p = 0; p < 4000; p++) {
+				fn()
+			}
+			const t1 = performance.now();
+			return {
+				elapsed: t1 - t0,
+				name: scriptNames[i]
+			}
+		}
+
+		function profile(name, arr) {
+			console.group(name)
+			const results = arr.map(runFn).sort((a, b) => a.elapsed > b.elapsed)
+			const average = results.reduce((sum, item) =>
+				sum + item.elapsed, 0) / (results.length || 1)
+
+			results.forEach((item, i, arr) => {
+				console.log(`%c ${item.name} - ${item.elapsed} msecs`, `background: ${item.elapsed < average ? (item.name === 'aph' ? 'darkGreen' : '#777') : 'darkRed'}; color: white`)
+			})
+			console.log('Average: ', average, 'msecs')
+			console.groupEnd(name)
+		}
+	</script>
+	<script type="text/javascript" src="./profiles.js"></script>
+	<script>
+		window.startProfiling(profile, [aph, cash, jQuery, Zepto])
+	</script>
+</body>
+
+</html>

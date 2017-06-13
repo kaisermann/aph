@@ -19,7 +19,8 @@
     "url": "https://github.com/kaisermann/aph/issues"
   },
   "scripts": {
-    "test": "ava"
+    "test": "ava",
+    "benchmark": "node benchmark.js"
   },
   "dependencies": {},
   "devDependencies": {
