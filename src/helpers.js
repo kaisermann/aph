@@ -54,11 +54,19 @@ export function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
+// This regex assumes the string begins with < and ends with >
+const singleTagRegEx = /(\w+)\/?>(?:<\/\1)?/i
 let docFragment
-export function createElement (str) {
-  if (!docFragment) {
+export function createElement (str, match) {
+  if ((match = singleTagRegEx.exec(str))) {
+    return doc.createElement(match[1])
+  } else if (!docFragment) {
     docFragment = doc.implementation.createHTMLDocument()
+    const base = docFragment.createElement('base')
+    base.href = document.location.href
+    docFragment.head.appendChild(base)
   }
+
   docFragment.body.innerHTML = str
   return docFragment.body.childNodes[0]
 }
