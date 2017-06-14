@@ -31,16 +31,12 @@ gulp.task('build', function () {
         },
         {
           format: 'umd',
+          moduleName: '$$',
         }
       )
     )
     .pipe($.rename(name + '.js'))
-    .pipe(
-      $.size({
-        showFiles: true,
-        pretty: false,
-      })
-    )
+    .pipe($.size({ showFiles: true }))
     .pipe(gulp.dest('./dist/'))
 })
 

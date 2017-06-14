@@ -67,10 +67,9 @@
 	</main>
 	<script type="text/javascript" src="./dist/aph.js"></script>
 	<script type="text/javascript" src="./plugins.js"></script>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-	<script src="https://rawgit.com/kenwheeler/cash/master/dist/cash.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.js"></script>
-
+	<script src="./node_modules/jquery/dist/jquery.slim.js"></script>
+	<script src="./node_modules/cash-dom/dist/cash.js"></script>
+	<script src="./node_modules/zepto/dist/zepto.js"></script>
 	<script type="text/javascript" src="./node_modules/lodash/lodash.js"></script>
 	<script type="text/javascript" src="./node_modules/benchmark/benchmark.js"></script>
 
@@ -85,7 +84,7 @@
 			return cash(Array.prototype.map.call(this, cb))
 		}
 
-		const aphCache = aph('span')
+		const aphCache = $$('span')
 		const cashCache = cash('span')
 		const jQueryCache = jQuery('span')
 		const ZeptoCache = Zepto('span')
@@ -118,16 +117,16 @@
 	</script>
 	<script>
 		function startBenchmark() {
-			aph('button').textContent = 'Benchmarking...'
+			$$('button').textContent = 'Benchmarking...'
 
-			aph('body').append([
-				aph('<div id="test-id">'),
-				aph('<span class="test-class">').repeat(5),
-				aph('<h2>Heading 1</h2>').repeat(2),
-				aph('<h3 data-attribute="test">Heading 2</h3>').repeat(2),
+			$$('body').append([
+				$$('<div id="test-id">'),
+				$$('<span class="test-class">').repeat(5),
+				$$('<h2>Heading 1</h2>').repeat(2),
+				$$('<h3 data-attribute="test">Heading 2</h3>').repeat(2),
 			])
 
-			const aphCache = aph('span')
+			const aphCache = $$('span')
 			const cashCache = cash('span')
 			const jQueryCache = jQuery('span')
 			const ZeptoCache = Zepto('span')
@@ -136,42 +135,42 @@
 			setTimeout(() => {
 				// Tests
 				profile('Simple div creation', [
-					() => aph('<div>'),
+					() => $$('<div>'),
 					() => cash('<div>'),
 					() => jQuery('<div>'),
 					() => Zepto('<div>'),
 				])
 
 				profile('Complex div creation', [
-					() => aph('<div style="background-color: pink">Hello!!</div>'),
+					() => $$('<div style="background-color: pink">Hello!!</div>'),
 					() => cash('<div style="background-color: pink">Hello!!</div>'),
 					() => jQuery('<div style="background-color: pink">Hello!!</div>'),
 					() => Zepto('<div style="background-color: pink">Hello!!</div>'),
 				])
 
 				profile('Id selection', [
-					() => aph('#test-id'),
+					() => $$('#test-id'),
 					() => cash('#test-id'),
 					() => jQuery('#test-id'),
 					() => Zepto('#test-id'),
 				])
 
 				profile('Class selection', [
-					() => aph('.test-class'),
+					() => $$('.test-class'),
 					() => cash('.test-class'),
 					() => jQuery('.test-class'),
 					() => Zepto('.test-class'),
 				])
 
 				profile('Element selection', [
-					() => aph('h1'),
+					() => $$('h1'),
 					() => cash('h1'),
 					() => jQuery('h1'),
 					() => Zepto('h1'),
 				])
 
 				profile('Complex selection', [
-					() => aph('body h2[data-attribute="test"]'),
+					() => $$('body h2[data-attribute="test"]'),
 					() => cash('body h2[data-attribute="test"]'),
 					() => jQuery('body h2[data-attribute="test"]'),
 					() => Zepto('body h2[data-attribute="test"]'),
@@ -225,18 +224,18 @@
 					}),
 				])
 
-				profile('Getting css style (of all elements) - jQuery like', [
+				profile('Getting computed css style (of all elements)', [
 					() => aphCache.css('background'),
 					() => cashCache.map((item, i) => getComputedStyle(item).background),
 					() => jQueryCache.map((i, item) => getComputedStyle(item).background),
 					() => ZeptoCache.map((i, item) => getComputedStyle(item).background),
 				])
 
-				profile('Getting css style (of all elements) - aph vanilla like', [
+				profile('Getting css style (of all elements)', [
 					() => aphCache.style.background,
-					() => cashCache.map((item, i) => style.background),
-					() => jQueryCache.map((i, item) => style.background),
-					() => ZeptoCache.map((i, item) => style.background),
+					() => cashCache.map((item, i) => item.style.background),
+					() => jQueryCache.map((i, item) => item.style.background),
+					() => ZeptoCache.map((i, item) => item.style.background),
 				])
 
 				profile('Setting css style - jQuery like', [
@@ -253,7 +252,7 @@
 					() => ZeptoCache.css('background', 'green'),
 				])
 
-				aph('button').textContent = 'Benchmark done! See your console!'
+				$$('button').textContent = 'Benchmark done! See your console!'
 			})
 		}
 	</script>

@@ -1,5 +1,7 @@
 import {
   isStr,
+  isFn,
+  isInt,
   isArrayLike,
   createElement,
   aphParseContext,
@@ -22,6 +24,7 @@ export default class Apheleia {
     }
 
     if (!elems) return this
+
     if (elems.nodeType === 1 || elems === window) {
       this[0] = elems
       this.length = 1
@@ -35,25 +38,29 @@ export default class Apheleia {
   }
 
   // Iterates through the elements with a 'callback(element, index)''
-  forEach (cb) {
+  forEach (eachCb) {
     // Iterates through the Apheleia object.
     // If the callback returns false, the iteration stops.
     for (
       let i = 0, len = this.length;
-      i < len && cb.call(this, this[i], i++) !== false;
+      i < len && eachCb.call(this, this[i], i++) !== false;
 
     );
     return this
   }
 
-  map (cb) {
+  map (mapCb) {
     const result = []
-    for (let len = this.length; len--; result[len] = cb(this[len], len, this));
+    for (
+      let len = this.length;
+      len--;
+      result[len] = mapCb(this[len], len, this)
+    );
     return wrap(result, this)
   }
 
-  filter (cb) {
-    return wrap(arrayPrototype.filter.call(this, cb), this)
+  filter (filterCb) {
+    return wrap(arrayPrototype.filter.call(this, filterCb), this)
   }
 
   // Creates a new Apheleia instance with the elements found.
@@ -73,11 +80,11 @@ export default class Apheleia {
 
   set (objOrKey, nothingOrValue) {
     return this.forEach(
-      typeof objOrKey !== 'object'
-        ? function (elem) {
+      isStr(objOrKey) || isInt(objOrKey)
+        ? elem => {
           elem[objOrKey] = nothingOrValue
         }
-        : function (elem) {
+        : elem => {
           for (const key in objOrKey) {
             elem[key] = objOrKey[key]
           }
@@ -85,21 +92,12 @@ export default class Apheleia {
     )
   }
 
-  // Sets CSS or gets the computed value
-  css (objOrKey, nothingOrValue) {
-    if (typeof objOrKey !== 'object') {
-      return nothingOrValue == null
-        ? this.map(elem => getComputedStyle(elem)[objOrKey])
-        : this.forEach(function (elem) {
-          elem.style[objOrKey] = nothingOrValue
-        })
+  // Gets and Sets the computed CSS value of a property.
+  css (key, val) {
+    if (isStr(key) && val == null) {
+      return this.map(elem => getComputedStyle(elem)[key])
     }
-
-    return this.forEach(function (elem) {
-      for (const key in objOrKey) {
-        elem.style[key] = objOrKey[key]
-      }
-    })
+    return this.style.set(key, val)
   }
 
   // DOM Manipulation
@@ -111,7 +109,7 @@ export default class Apheleia {
 
   // Appends the passed html/aph
   append (futureContent) {
-    return this.html(futureContent, function (parent, child) {
+    return this.html(futureContent, (parent, child) => {
       parent.appendChild(child)
     })
   }
@@ -123,7 +121,7 @@ export default class Apheleia {
 
   // Prepends the passed html/aph
   prepend (futureContent) {
-    return this.html(futureContent, function (parent, child) {
+    return this.html(futureContent, (parent, child) => {
       parent.insertBefore(child, parent.firstChild)
     })
   }
@@ -143,7 +141,7 @@ export default class Apheleia {
 
     // If the .html() is called without a callback, let's erase everything
     // And append the nodes
-    if (!(cb instanceof Function)) {
+    if (!isFn(cb)) {
       return this.forEach(parent => {
         parent.innerHTML = ''
       }).append(children)
@@ -160,7 +158,7 @@ export default class Apheleia {
     for (let i = 0, len = children.length; i < len; i++) {
       if (isArrayLike(children[i])) {
         for (let j = 0, len2 = children[i].length; j < len2; j++) {
-          if (!~flatChildren.indexOf(children[i][j])) {
+          if (flatChildren.indexOf(children[i][j]) < 0) {
             flatChildren.push(children[i][j])
           }
         }

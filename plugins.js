@@ -1,10 +1,10 @@
-/* global aph */
+/* global aph, $$ */
 
-aph.fn.log = function () {
+$$.fn.log = function () {
   return this.forEach(item => console.log(item))
 }
 
-aph.fn.repeat = function (numberOfClones) {
+$$.fn.repeat = function (numberOfClones) {
   let repeatedElements = []
   let cachedElements = this.asArray()
   for (let i = numberOfClones; i--;) {
@@ -12,10 +12,10 @@ aph.fn.repeat = function (numberOfClones) {
       cachedElements.map(item => item.cloneNode())
     )
   }
-  return aph(repeatedElements, this.context, this)
+  return $$(repeatedElements, this.context, this)
 }
 
-aph.fn.concat = function () {
+$$.fn.concat = function () {
   function iterate (what, doing) {
     for (let i = 0, len = what.length; i < len; i++) {
       doing(what[i])
@@ -32,5 +32,5 @@ aph.fn.concat = function () {
       })
     }
   })
-  return aph(sum, this.meta.context, { parent: this })
+  return $$(sum, this.meta.context, { parent: this })
 }

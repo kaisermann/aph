@@ -9,7 +9,6 @@ function aphSetWrapper (objOrKey, nothingOrValue) {
   return this.aph.owner
 }
 
-const defaultWrapperMethods = ['map', 'filter', 'forEach', 'get']
 export function wrap (what, owner) {
   let acc = []
 
@@ -20,7 +19,7 @@ export function wrap (what, owner) {
 
     if (item.nodeType === 1) {
       // If we received a single node
-      if (!~acc.indexOf(item)) {
+      if (acc.indexOf(item) < 0) {
         acc.push(item)
       }
     } else if (
@@ -31,19 +30,20 @@ export function wrap (what, owner) {
     ) {
       // If we received a node list/collection
       for (let j = 0, len2 = item.length; j < len2; j++) {
-        if (!~acc.indexOf(item[j])) {
+        if (acc.indexOf(item[j]) < 0) {
           acc.push(item[j])
         }
       }
     } else {
-      defaultWrapperMethods.forEach(function (key) {
-        what[key] = Apheleia.prototype[key]
-      })
+      what.map = Apheleia.prototype.map
+      what.filter = Apheleia.prototype.filter
+      what.forEach = Apheleia.prototype.forEach
+      what.get = Apheleia.prototype.get
       what.set = aphSetWrapper
       what.aph = { owner: owner }
 
-      // Returns a proxy which allows to access methods and properties
-      // of the list items type.
+      // Returns a proxy which allows to access
+      // the items methods and properties
       return new Proxy(what, {
         set (target, propKey, val) {
           target.set(propKey, val)
@@ -57,11 +57,11 @@ export function wrap (what, owner) {
             return wrapPrototypeMethod(propKey, target[0]).bind(target)
           }
 
-          if (!hasKey(target[0], propKey)) {
-            return undefined
+          if (hasKey(target[0], propKey)) {
+            return target.map(i => i[propKey])
           }
 
-          return target.map(i => i[propKey])
+          return undefined
         },
       })
     }

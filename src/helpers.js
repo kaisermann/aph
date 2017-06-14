@@ -14,6 +14,10 @@ export function isFn (maybeFn) {
   return typeof maybeFn === 'function'
 }
 
+export function isInt (maybeInt) {
+  return typeof maybeInt === 'number' && Math.floor(maybeInt) === maybeInt
+}
+
 // Check if what's passed is to be considered a colletion
 export function isArrayLike (maybeCollection) {
   return (
@@ -54,7 +58,7 @@ export function aphParseContext (elemOrAphOrStr) {
       : isStr(elemOrAphOrStr)
         ? querySelector(elemOrAphOrStr, doc)[0] // If string passed let's search for the element on the DOM
         : isArrayLike(elemOrAphOrStr)
-          ? elemOrAphOrStr[0] // If already an collection
+          ? elemOrAphOrStr[0] // If already a collection
           : doc // Return the document if nothing else...
 }
 
@@ -64,7 +68,9 @@ let docFragment
 export function createElement (str, match) {
   if ((match = singleTagRegEx.exec(str))) {
     return doc.createElement(match[1])
-  } else if (!docFragment) {
+  }
+
+  if (!docFragment) {
     docFragment = doc.implementation.createHTMLDocument()
     const base = docFragment.createElement('base')
     base.href = document.location.href
@@ -78,16 +84,20 @@ export function createElement (str, match) {
 // Wraps a object method making it work with collections natively and caches it
 const wrappedMethodsCache = {}
 
-function auxMap (overWhat, methodName, args) {
-  const result = overWhat.map(i => i[methodName].apply(i, args))
-  return result[0] != null || result[result.length - 1] != null
-    ? result
-    : getAphOwner(overWhat)
+// Searches for an apheleia collection on the ownership hierarchy
+function getAphOwner (what) {
+  while (what.constructor !== Apheleia) what = what.aph.owner
+  return what
 }
 
-function getAphOwner (what) {
-  while (!(what.constructor === Apheleia)) what = what.aph.owner
-  return what
+// Auxiliary map function
+function auxMap (overWhat, methodName, args) {
+  const result = overWhat.map(i => i[methodName].apply(i, args))
+  // If first and last items are null/undefined,
+  // we assume the method returned nothing
+  return result[0] != null && result[result.length - 1] != null
+    ? result
+    : getAphOwner(overWhat)
 }
 
 export function wrapPrototypeMethod (methodName, sample) {
@@ -101,21 +111,20 @@ export function wrapPrototypeMethod (methodName, sample) {
     // Let's cache the wrapper function
     // If we're dealing with a set method,
     // should allow to pass a object as parameter
-    const isSetMethod =
-      methodName.substr(0, 3) === 'set' &&
-      methodName[methodName.length - 1] !== 's'
 
-    wrappedMethodsCache[curType][methodName] = isSetMethod
+    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
+      'set' && methodName[methodName.length - 1] !== 's'
       ? function () {
         const args = arguments
+          // Received only one argument and it's a 'plain' object?
         if (args.length === 1 && args[0].constructor === Object) {
           return getAphOwner(
-              // this.forEach returns 'this'
               this.forEach(item => {
                 for (const objKey in args[0]) {
                   item[methodName](objKey, args[0][objKey])
                 }
               })
+              // this.forEach returns 'this'
             )
         }
         return auxMap(this, methodName, args)
@@ -124,5 +133,6 @@ export function wrapPrototypeMethod (methodName, sample) {
         return auxMap(this, methodName, arguments)
       }
   }
+
   return wrappedMethodsCache[curType][methodName]
 }

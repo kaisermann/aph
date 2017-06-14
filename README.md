@@ -2,11 +2,11 @@
 
 # Aph
 
-A very lightweight (4.61 kbs minified and **1.8 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (4.32 kbs minified and **1.7 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
-**And what is simpler than writing all your code _almost_ as if you're doing it with Vanilla JS?**
+**And what is simpler than writing all your code _almost_ as if you're doing it with Vanilla JS, without having to learn a new API and begin to depend on it?**
 
 Yep, you read it right. Almost like Vanilla JS.
 
@@ -21,12 +21,12 @@ Yep, you read it right. Almost like Vanilla JS.
   </body>
   <script>
     // Behooooold
-    aph('span')
+    $$('span')
       .classList.add('test-class')
-      .setAttribute('custom-attr', 'test-attr')
-      .setAttribute({
-          'custom-attr-2': 'test-attr-2',
-          'custom-attr-3': 'test-attr-3'
+      .setAttribute('custom-attr-1', 'test-value-1')
+      .setAttribute({ // Passing a key/value object works as well
+          'custom-attr-2': 'test-value-2',
+          'custom-attr-3': 'test-value-3'
       })
       .style.setProperty({
           color: 'red',
@@ -42,13 +42,13 @@ Yep, you read it right. Almost like Vanilla JS.
 
 ```html
 ...
-  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr-1="test-value-1" custom-attr-2="test-value-2" custom-attr-3="test-value-3">
     Ooooops
   </span>
-  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr-1="test-value-1" custom-attr-2="test-value-2" custom-attr-3="test-value-3">
     Ooooops
   </span>
-  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr="test-attr" custom-attr-2="test-attr-2" custom-attr-3="test-attr-3">
+  <span style="color: red; background: pink; padding: 10px;" class="test-class" custom-attr-1="test-value-1" custom-attr-2="test-value-2" custom-attr-3="test-value-3">
     Ooooops
   </span>
 ...
@@ -58,20 +58,22 @@ Yep, you read it right. Almost like Vanilla JS.
 
 ### How does it work
 
-`aph` initially extends almost all methods from `Array.prototype` and all getters/setters/methods from `HTMLElement`. For each call to one of those methods/properties, `aph` creates a Proxy which allows you to access them as if you were dealing with the object itself.
+`aph` initially extends all getters/setters/methods from `HTMLDivElement`. For each call to one of those methods/properties, `aph` creates a Proxy which allows you to access them as if you were dealing with the objects itself.
 
 **Example**:
 ```js
-1) aph('div')
+1) $$('div')
 Creates an Apheleia Collection around all divs
 
-2) aph('div').classList
+2) $$('div').classList
 Returns the classList of all divs
 [DOMTokenList(0), DOMTokenList(1), DOMTokenList(1)]
 
-3) aph identifies the type of the first entry (DOMTokenList) and creates a proxy which passes all functions to the DOMTokenList.prototype. The array will now be considered an Apheleia Wrapper.
+3) aph identifies the type of the first entry (DOMTokenList) and creates
+a proxy which passes all functions to the DOMTokenList.prototype.
+The array will now be considered an Apheleia Wrapper.
 
-4) aph('div').classList.add('test-class','test-class-2')
+4) $$('div').classList.add('test-class','test-class-2')
 
 5) *PROFIT*
 ```
@@ -81,8 +83,8 @@ Returns the classList of all divs
 Any extended method with a name beginning with `set` and not ending with a `s`, such as `.setAttribute`/`.setProperty`, can be used by passing an object of key/value pairs.
 
 ```js
-aph('div').setAttribute('oneAttribute','atAtime')
-aph('div').setAttribute({
+$$('div').setAttribute('oneAttribute','atAtime')
+$$('div').setAttribute({
   multiple: 'attributes',
   at: 'aTime'
 })
@@ -95,20 +97,20 @@ All Apheleia Collections and Wrappers have these default methods:
 ```js
 // Iterates through all items on the colleciton
 // Can 'return false' to break
-aph('div').style.forEach()
+$$('div').style.forEach()
 
 // Returns a mapped Apheleia Wrapper
-aph('div').style.map(mapCallback)
+$$('div').style.map(mapCallback)
 
 // Returns a filtered Apheleia Wrapper
-aph('div').style.filter(filterCallback)
+$$('div').style.filter(filterCallback)
 
 // Generic get method for getting a property
-aph('div').style.get(propName)
+$$('div').style.get(propName)
 
 // Generic set method for setting properties
-aph('div').style.set(propName, propValue)
-aph('div').style.set({
+$$('div').style.set(propName, propValue)
+$$('div').style.set({
   propName: propValue,
   propName2: propValue2,
 })
@@ -118,7 +120,7 @@ Properties not available in `HTMLDivElement`, such as `href` on `<a>` elements, 
 
 ### But... what about performance?
 
-By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing).
+By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing... oh boy).
 
 ##### Let's see some benchmarks (_lower is better_)
 
@@ -259,21 +261,14 @@ Have some suggestions or critics? Talk to me!
 
 ### [Go see the documentation!](https://github.com/kaisermann/aph/wiki)
 
-## Support
+## Browsers support <sub><sup><sub><sub>made by <a href="https://godban.github.io">godban</a></sub></sub></sup></sub>
 
-- Chrome 13+
-- Firefox 4+
-- IE 10+
-- Edge 12+
-- Safari 5.1+
-- Opera 12+
-- Android Browser 4.4.4+
-- iOS Safari 7.0-7.1+
-- Blackberry Browser 7+
-- Chrome for Android 53+
-- Firefox for Android 49+
+| [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/edge.png" alt="IE / Edge" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>IE / Edge | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/firefox.png" alt="Firefox" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/chrome.png" alt="Chrome" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/safari.png" alt="Safari" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Safari | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/opera.png" alt="Opera" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Opera |
+| --------- | --------- | --------- | --------- | --------- |
+| 12+ | 18+ | 49+ | 10+ | 36+
 
 ## Credits and inspirations
 
 - ['Cash'](https://github.com/kenwheeler/cash/)
 - ['NodeList.js'](https://github.com/eorroe/NodeList.js)
+- ['jQuery'](https://github.com/jquery/jquery)

@@ -15,11 +15,10 @@ aph.fn['repeat'] = function (numberOfClones) {
   return aph(repeatedElements, this.aph.context, this)
 }
 
-test('should extend array methods', function (t) {
+test('should have map and filter methods', function (t) {
   const aInstance = aph()
   t.truthy(aInstance.map)
   t.truthy(aInstance.filter)
-  t.truthy(aInstance.shift)
 })
 
 test('should extend HTMLElement props and methods', function (t) {
