@@ -227,16 +227,16 @@
 
 				profile('Getting css style (of all elements) - jQuery like', [
 					() => aphCache.css('background'),
-					() => cashCache.map((item, i) => item.style.background),
-					() => jQueryCache.map((i, item) => item.style.background),
-					() => ZeptoCache.map((i, item) => item.style.background),
+					() => cashCache.map((item, i) => getComputedStyle(item).background),
+					() => jQueryCache.map((i, item) => getComputedStyle(item).background),
+					() => ZeptoCache.map((i, item) => getComputedStyle(item).background),
 				])
 
 				profile('Getting css style (of all elements) - aph vanilla like', [
 					() => aphCache.style.background,
-					() => cashCache.map((item, i) => item.style.background),
-					() => jQueryCache.map((i, item) => item.style.background),
-					() => ZeptoCache.map((i, item) => item.style.background),
+					() => cashCache.map((item, i) => style.background),
+					() => jQueryCache.map((i, item) => style.background),
+					() => ZeptoCache.map((i, item) => style.background),
 				])
 
 				profile('Setting css style - jQuery like', [
