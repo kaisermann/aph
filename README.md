@@ -122,131 +122,131 @@ Properties not available in `HTMLDivElement`, such as `href` on `<a>` elements, 
 
 By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing... oh boy).
 
-##### Let's see some benchmarks (_lower is better_)
+##### Let's see some benchmarks
 
 ```
 Benchmark: Simple div creation
-  aph x 959,167 ops/sec ±4.44% (57 runs sampled)
-  cash x 193,441 ops/sec ±2.15% (52 runs sampled)
-  jQuery x 620,170 ops/sec ±3.18% (57 runs sampled)
-  Zepto x 387,367 ops/sec ±1.82% (58 runs sampled)
+  aph x 1,076,394 ops/sec ±3.96% (54 runs sampled)
+  cash x 196,640 ops/sec ±3.95% (53 runs sampled)
+  jQuery x 716,224 ops/sec ±3.10% (55 runs sampled)
+  Zepto x 394,620 ops/sec ±10.15% (55 runs sampled)
   ----------------------------
   Fastest is aph
   Slowest is cash
 
 Benchmark: Complex div creation
-  aph x 125,404 ops/sec ±2.98% (53 runs sampled)
-  cash x 123,620 ops/sec ±4.23% (48 runs sampled)
-  jQuery x 27,424 ops/sec ±9.45% (47 runs sampled)
-  Zepto x 38,587 ops/sec ±8.82% (46 runs sampled)
+  aph x 126,744 ops/sec ±8.94% (53 runs sampled)
+  cash x 120,484 ops/sec ±4.06% (46 runs sampled)
+  jQuery x 25,937 ops/sec ±11.68% (44 runs sampled)
+  Zepto x 45,721 ops/sec ±4.18% (54 runs sampled)
   ----------------------------
   Fastest is aph
   Slowest is jQuery
 
 Benchmark: Id selection
-  aph x 1,381,814 ops/sec ±18.06% (48 runs sampled)
-  cash x 1,990,307 ops/sec ±3.14% (56 runs sampled)
-  jQuery x 1,561,118 ops/sec ±10.37% (56 runs sampled)
-  Zepto x 1,840,907 ops/sec ±1.98% (58 runs sampled)
-  ----------------------------
-  Fastest is cash
-  Slowest is aph
-
-Benchmark: Class selection
-  aph x 679,424 ops/sec ±7.84% (56 runs sampled)
-  cash x 798,323 ops/sec ±2.84% (59 runs sampled)
-  jQuery x 538,127 ops/sec ±6.58% (54 runs sampled)
-  Zepto x 315,302 ops/sec ±3.01% (57 runs sampled)
+  aph x 1,899,029 ops/sec ±7.18% (56 runs sampled)
+  cash x 2,077,583 ops/sec ±7.20% (56 runs sampled)
+  jQuery x 1,953,833 ops/sec ±4.37% (57 runs sampled)
+  Zepto x 1,753,189 ops/sec ±4.82% (56 runs sampled)
   ----------------------------
   Fastest is cash
   Slowest is Zepto
 
+Benchmark: Class selection
+  aph x 840,071 ops/sec ±6.45% (57 runs sampled)
+  cash x 747,092 ops/sec ±2.93% (58 runs sampled)
+  jQuery x 359,539 ops/sec ±3.27% (56 runs sampled)
+  Zepto x 313,356 ops/sec ±5.32% (53 runs sampled)
+  ----------------------------
+  Fastest is aph
+  Slowest is Zepto
+
 Benchmark: Element selection
-  aph x 1,851,634 ops/sec ±2.33% (59 runs sampled)
-  cash x 1,299,823 ops/sec ±5.03% (59 runs sampled)
-  jQuery x 966,448 ops/sec ±3.05% (54 runs sampled)
-  Zepto x 1,170,820 ops/sec ±1.79% (58 runs sampled)
+  aph x 1,544,708 ops/sec ±6.70% (50 runs sampled)
+  cash x 1,198,909 ops/sec ±4.69% (56 runs sampled)
+  jQuery x 686,590 ops/sec ±3.14% (56 runs sampled)
+  Zepto x 1,046,541 ops/sec ±5.42% (53 runs sampled)
   ----------------------------
   Fastest is aph
   Slowest is jQuery
 
 Benchmark: Complex selection
-  aph x 658,141 ops/sec ±6.61% (46 runs sampled)
-  cash x 675,468 ops/sec ±7.40% (51 runs sampled)
-  jQuery x 500,321 ops/sec ±8.72% (53 runs sampled)
-  Zepto x 515,826 ops/sec ±4.74% (50 runs sampled)
+  aph x 644,871 ops/sec ±6.49% (45 runs sampled)
+  cash x 582,920 ops/sec ±10.28% (46 runs sampled)
+  jQuery x 305,232 ops/sec ±7.93% (49 runs sampled)
+  Zepto x 453,024 ops/sec ±9.76% (44 runs sampled)
   ----------------------------
-  Fastest is cash
+  Fastest is aph
   Slowest is jQuery
 
 Benchmark: Adding one class
-  aph x 305,814 ops/sec ±1.44% (60 runs sampled)
-  cash x 521,141 ops/sec ±1.05% (61 runs sampled)
-  jQuery x 150,981 ops/sec ±0.74% (61 runs sampled)
-  Zepto x 93,624 ops/sec ±5.39% (56 runs sampled)
+  aph x 272,719 ops/sec ±21.85% (52 runs sampled)
+  cash x 398,615 ops/sec ±6.86% (51 runs sampled)
+  jQuery x 112,916 ops/sec ±2.94% (56 runs sampled)
+  Zepto x 87,249 ops/sec ±5.86% (52 runs sampled)
   ----------------------------
   Fastest is cash
   Slowest is Zepto
 
 Benchmark: Adding multiple (3) class
-  aph x 253,763 ops/sec ±1.31% (58 runs sampled)
-  cash x 169,596 ops/sec ±1.95% (59 runs sampled)
-  jQuery x 85,870 ops/sec ±0.83% (62 runs sampled)
-  Zepto x 29,382 ops/sec ±0.79% (61 runs sampled)
+  aph x 253,490 ops/sec ±8.13% (51 runs sampled)
+  cash x 151,915 ops/sec ±4.61% (55 runs sampled)
+  jQuery x 62,151 ops/sec ±4.53% (56 runs sampled)
+  Zepto x 27,138 ops/sec ±2.54% (57 runs sampled)
   ----------------------------
   Fastest is aph
   Slowest is Zepto
 
 Benchmark: Setting one attribute
-  aph x 453,059 ops/sec ±1.97% (60 runs sampled)
-  cash x 752,550 ops/sec ±5.99% (52 runs sampled)
-  jQuery x 334,964 ops/sec ±2.81% (60 runs sampled)
-  Zepto x 293,503 ops/sec ±0.69% (62 runs sampled)
+  aph x 429,247 ops/sec ±5.48% (53 runs sampled)
+  cash x 740,457 ops/sec ±5.90% (58 runs sampled)
+  jQuery x 281,562 ops/sec ±9.79% (48 runs sampled)
+  Zepto x 255,331 ops/sec ±3.60% (57 runs sampled)
   ----------------------------
   Fastest is cash
   Slowest is Zepto
 
 Benchmark: Setting multiple (3) attribute
-  aph x 229,103 ops/sec ±3.74% (58 runs sampled)
-  cash x 248,571 ops/sec ±0.90% (62 runs sampled)
-  jQuery x 101,650 ops/sec ±4.28% (59 runs sampled)
-  Zepto x 182,067 ops/sec ±1.75% (61 runs sampled)
+  aph x 205,203 ops/sec ±4.40% (53 runs sampled)
+  cash x 206,640 ops/sec ±10.12% (52 runs sampled)
+  jQuery x 98,979 ops/sec ±5.06% (56 runs sampled)
+  Zepto x 161,420 ops/sec ±8.95% (55 runs sampled)
   ----------------------------
-  Fastest is cash
+  Fastest is aph
   Slowest is jQuery
 
-Benchmark: Getting css style (of all elements) - jQuery like
-  aph x 34,608 ops/sec ±10.74% (45 runs sampled)
-  cash x 475,026 ops/sec ±13.95% (58 runs sampled)
-  jQuery x 436,623 ops/sec ±1.87% (57 runs sampled)
-  Zepto x 297,087 ops/sec ±1.24% (58 runs sampled)
+Benchmark: Getting computed css style (of all elements)
+  aph x 31,863 ops/sec ±9.23% (42 runs sampled)
+  cash x 32,169 ops/sec ±12.47% (42 runs sampled)
+  jQuery x 29,888 ops/sec ±14.63% (43 runs sampled)
+  Zepto x 32,122 ops/sec ±10.18% (44 runs sampled)
   ----------------------------
-  Fastest is jQuery
-  Slowest is aph
+  Fastest is aph
+  Slowest is jQuery
 
-Benchmark: Getting css style (of all elements) - aph vanilla like
-  aph x 261,804 ops/sec ±1.38% (58 runs sampled)
-  cash x 509,581 ops/sec ±5.61% (59 runs sampled)
-  jQuery x 449,553 ops/sec ±1.04% (60 runs sampled)
-  Zepto x 275,834 ops/sec ±9.66% (62 runs sampled)
+Benchmark: Getting css style (of all elements)
+  aph x 316,422 ops/sec ±4.75% (56 runs sampled)
+  cash x 456,598 ops/sec ±6.26% (51 runs sampled)
+  jQuery x 346,909 ops/sec ±20.64% (52 runs sampled)
+  Zepto x 258,296 ops/sec ±5.62% (53 runs sampled)
   ----------------------------
   Fastest is cash
   Slowest is Zepto
 
 Benchmark: Setting css style - jQuery like
-  aph x 135,642 ops/sec ±3.54% (56 runs sampled)
-  cash x 107,408 ops/sec ±2.91% (57 runs sampled)
-  jQuery x 84,212 ops/sec ±22.90% (59 runs sampled)
-  Zepto x 24,581 ops/sec ±12.43% (35 runs sampled)
+  aph x 79,805 ops/sec ±4.21% (55 runs sampled)
+  cash x 94,811 ops/sec ±7.65% (54 runs sampled)
+  jQuery x 79,720 ops/sec ±4.44% (55 runs sampled)
+  Zepto x 38,916 ops/sec ±4.69% (53 runs sampled)
   ----------------------------
-  Fastest is aph
+  Fastest is cash
   Slowest is Zepto
 
 Benchmark: Setting css style - aph vanilla like
-  aph x 62,570 ops/sec ±15.22% (42 runs sampled)
-  cash x 106,431 ops/sec ±4.69% (58 runs sampled)
-  jQuery x 95,453 ops/sec ±1.25% (59 runs sampled)
-  Zepto x 43,774 ops/sec ±1.85% (60 runs sampled)
+  aph x 76,324 ops/sec ±16.74% (51 runs sampled)
+  cash x 93,216 ops/sec ±7.22% (51 runs sampled)
+  jQuery x 81,776 ops/sec ±4.51% (54 runs sampled)
+  Zepto x 36,264 ops/sec ±7.37% (49 runs sampled)
   ----------------------------
   Fastest is cash
   Slowest is Zepto

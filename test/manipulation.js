@@ -1,5 +1,4 @@
 require('jsdom-global')()
-require('colors')
 
 const test = require('ava')
 const aph = require('../dist/aph')

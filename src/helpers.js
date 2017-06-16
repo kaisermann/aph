@@ -116,16 +116,16 @@ export function wrapPrototypeMethod (methodName, sample) {
       'set' && methodName[methodName.length - 1] !== 's'
       ? function () {
         const args = arguments
-          // Received only one argument and it's a 'plain' object?
+        // Received only one argument and it's a 'plain' object?
         if (args.length === 1 && args[0].constructor === Object) {
           return getAphOwner(
-              this.forEach(item => {
-                for (const objKey in args[0]) {
-                  item[methodName](objKey, args[0][objKey])
-                }
-              })
-              // this.forEach returns 'this'
-            )
+            this.forEach(item => {
+              for (const objKey in args[0]) {
+                item[methodName](objKey, args[0][objKey])
+              }
+            })
+            // this.forEach returns 'this'
+          )
         }
         return auxMap(this, methodName, args)
       }
