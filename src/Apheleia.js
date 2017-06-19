@@ -13,14 +13,14 @@ import { arrayPrototype, wrap } from './shared.js'
 export default class Apheleia {
   constructor (elems, context, aphMetaObj) {
     this.aph = aphMetaObj || {}
+    this.aph.context = context = aphParseContext(context)
+    this.length = 0
 
     if (isStr(elems)) {
       // If creation string, create the element
-      elems = elems[0] === '<' &&
-        elems[elems.length - 1] === '>' &&
-        elems.length > 2
+      elems = elems[0] === '<' && elems[elems.length - 1] === '>'
         ? createElement(elems)
-        : querySelector(elems, (this.aph.context = aphParseContext(context)))
+        : querySelector(elems, context)
     }
 
     if (!elems) return this
