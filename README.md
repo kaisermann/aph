@@ -71,7 +71,7 @@ Returns the classList of all divs
 
 3) aph identifies the type of the first entry (DOMTokenList) and creates
 a proxy which passes all functions to the DOMTokenList.prototype.
-The array will now be considered an Apheleia Wrapper.
+The array will now be considered an Apheleia Proxy.
 
 4) $$('div').classList.add('test-class','test-class-2')
 
@@ -92,17 +92,17 @@ $$('div').setAttribute({
 
 ---
 
-All Apheleia Collections and Wrappers have these default methods:
+All Apheleia Collections and Proxies have these default methods:
 
 ```js
 // Iterates through all items on the colleciton
 // Can 'return false' to break
 $$('div').style.forEach()
 
-// Returns a mapped Apheleia Wrapper
+// Returns a mapped Apheleia Collection or Proxy
 $$('div').style.map(mapCallback)
 
-// Returns a filtered Apheleia Wrapper
+// Returns a filtered Apheleia Collection or Proxy
 $$('div').style.filter(filterCallback)
 
 // Generic get method for getting a property
