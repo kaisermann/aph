@@ -63,7 +63,7 @@
 
 <body>
 	<main>
-		<button onclick="startBenchmark()">Open your console and press me</button>
+		<button>Open your console and press me</button>
 	</main>
 	<script type="text/javascript" src="./dist/aph.js"></script>
 	<script type="text/javascript" src="./plugins.js"></script>
@@ -117,7 +117,7 @@
 	</script>
 	<script>
 		function startBenchmark() {
-			$$('button').textContent = 'Benchmarking...'
+			$$('title').textContent = $$('button').textContent = 'Benchmarking...'
 
 			$$('body').append([
 				$$('<div id="test-id">'),
@@ -252,9 +252,10 @@
 					() => ZeptoCache.css('background', 'green'),
 				])
 
-				$$('button').textContent = 'Benchmark done! See your console!'
+				$$('title').textContent = $$('button').textContent = 'Benchmark done! See your console!'
 			})
 		}
+		$$('button').addEventListener('click', startBenchmark)
 	</script>
 </body>
 

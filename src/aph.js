@@ -1,23 +1,7 @@
-import Apheleia from './Apheleia.js'
-import { wrap } from './shared.js'
-import {
-  wrapPrototypeMethod,
-  createElement,
-  aphParseContext,
-  querySelector,
-  hasKey,
-  isFn,
-} from './helpers.js'
+import { wrapPrototypeMethod, createElement, hasKey, isFn } from './helpers.js'
 
-export default function aph (elems, context, metaObj) {
-  return new Apheleia(elems, context, metaObj)
-}
-
-aph.fn = Apheleia.prototype
-aph.wrap = wrap
-aph.querySelector = function (selector, context) {
-  querySelector(selector, aphParseContext(context))
-}
+import aph from './Apheleia.js'
+export default aph
 
 // Extending default HTMLDivElement methods and properties
 let aDiv = createElement('<div>')

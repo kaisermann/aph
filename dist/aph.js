@@ -12,7 +12,176 @@ function aphSetWrapper (objOrKey, nothingOrValue) {
   return this.aph.owner
 }
 
-function wrap (what, owner) {
+var Apheleia = function Apheleia (elems, context, meta) {
+  if (!this) { return new Apheleia(elems, context, meta) }
+  this.aph = meta || {};
+  this.aph.context = context = aphParseContext(context);
+  this.length = 0;
+
+  if (isStr(elems)) {
+    // If creation string, create the element
+    elems = elems[0] === '<' && elems[elems.length - 1] === '>'
+      ? createElement(elems)
+      : querySelector(elems, context);
+  }
+
+  if (!elems) { return this }
+
+  if (elems.nodeType === 1 || elems === window) {
+    this[0] = elems;
+    this.length = 1;
+  } else {
+    for (
+      var len = (this.length = elems.length); // Sets current length
+      len--; // Ends loop when reaches 0
+      this[len] = elems[len] // Builds the array-like structure
+    ){  }
+  }
+};
+
+// Iterates through the elements with a 'callback(element, index)''
+Apheleia.prototype.forEach = function forEach (eachCb) {
+  // Iterates through the Apheleia object.
+  // If the callback returns false, the iteration stops.
+  for (
+    var i = 0, len = this.length;
+    i < len && eachCb.call(this, this[i], i++) !== false;
+
+  ){  }
+  return this
+};
+
+Apheleia.prototype.map = function map (mapCb) {
+  var result = [];
+  for (
+    var len = this.length;
+    len--;
+    result[len] = mapCb(this[len], len, this)
+  ){  }
+  return Apheleia.wrap(result, this)
+};
+
+Apheleia.prototype.filter = function filter (filterCb) {
+  return Apheleia.wrap(arrayPrototype.filter.call(this, filterCb), this)
+};
+
+// Creates an Apheleia instance with the elements found.
+Apheleia.prototype.find = function find (selector) {
+  return Apheleia(selector, this[0], { owner: this })
+};
+
+// Returns the collection in array format
+Apheleia.prototype.asArray = function asArray () {
+  return arrayPrototype.slice.call(this)
+};
+
+// Object Property manipulation methods
+Apheleia.prototype.get = function get (key) {
+  return this.map(function (elem) { return elem[key]; })
+};
+
+Apheleia.prototype.set = function set (objOrKey, nothingOrValue) {
+  return this.forEach(
+    isStr(objOrKey) || isInt(objOrKey)
+      ? function (elem) {
+        elem[objOrKey] = nothingOrValue;
+      }
+      : function (elem) {
+        for (var key in objOrKey) {
+          elem[key] = objOrKey[key];
+        }
+      }
+  )
+};
+
+// Gets and Sets the computed CSS value of a property.
+Apheleia.prototype.css = function css (key, val) {
+  if (isStr(key) && val == null) {
+    return this.map(function (elem) { return getComputedStyle(elem)[key]; })
+  }
+  return this.style.set(key, val)
+};
+
+// DOM Manipulation
+Apheleia.prototype.detach = function detach () {
+  return this.forEach(function (elem) {
+    elem.parentNode.removeChild(elem);
+  })
+};
+
+// Appends the passed html/aph
+Apheleia.prototype.append = function append (futureContent) {
+  return this.html(futureContent, function (parent, child) {
+    parent.appendChild(child);
+  })
+};
+
+Apheleia.prototype.appendTo = function appendTo (newParent) {
+  Apheleia(newParent).append(this);
+  return this
+};
+
+// Prepends the passed html/aph
+Apheleia.prototype.prepend = function prepend (futureContent) {
+  return this.html(futureContent, function (parent, child) {
+    parent.insertBefore(child, parent.firstChild);
+  })
+};
+
+Apheleia.prototype.prependTo = function prependTo (newParent) {
+  Apheleia(newParent).prepend(this);
+  return this
+};
+
+// Sets or gets the html
+Apheleia.prototype.html = function html (children, cb) {
+  // If there're no arguments
+  // Let's return the html of the first element
+  if (children == null) {
+    return this.map(function (elem) { return elem.innerHTML; })
+  }
+
+  // If the .html() is called without a callback, let's erase everything
+  // And append the nodes
+  if (!isFn(cb)) {
+    return this.forEach(function (parent) {
+      parent.innerHTML = '';
+    }).append(children)
+  }
+
+  // Manipulating arrays is easier
+  if (!isArrayLike(children)) {
+    children = [children];
+  }
+
+  // If we receive any collections (arrays, lists, aph),
+  // we must get its elements
+  var flatChildren = [];
+  for (var i = 0, len = children.length; i < len; i++) {
+    if (isArrayLike(children[i])) {
+      for (var j = 0, len2 = children[i].length; j < len2; j++) {
+        if (flatChildren.indexOf(children[i][j]) < 0) {
+          flatChildren.push(children[i][j]);
+        }
+      }
+    } else {
+      flatChildren.push(children[i]);
+    }
+  }
+
+  // If a callback is received as the second argument
+  // let's pass the parent and child nodes
+  // and let the callback do all the work
+  return this.forEach(function (parent) { return flatChildren.forEach(function (child) {
+      cb(parent, isStr(child) ? createElement(child) : child);
+    }); }
+  )
+};
+Apheleia.querySelector = function querySelector$1 (selector, context) {
+  return querySelector(selector, aphParseContext(context))
+};
+
+Apheleia.wrap = function wrap (what, owner) {
   var acc = [];
 
   for (var i = 0, len = what.length, item = (void 0); i < len; i++) {
@@ -70,8 +239,10 @@ function wrap (what, owner) {
     }
   }
 
-  return new Apheleia(acc, owner ? owner.aph.context : null, { owner: owner })
-}
+  return Apheleia(acc, owner ? owner.aph.context : null, { owner: owner })
+};
+
+Apheleia.fn = Apheleia.prototype;
 
 function hasKey (what, key) {
   return typeof what[key] !== 'undefined'
@@ -209,188 +380,12 @@ function wrapPrototypeMethod (methodName, sample) {
   return wrappedMethodsCache[curType][methodName]
 }
 
-var Apheleia = function Apheleia (elems, context, aphMetaObj) {
-  this.aph = aphMetaObj || {};
-  this.aph.context = context = aphParseContext(context);
-  this.length = 0;
-
-  if (isStr(elems)) {
-    // If creation string, create the element
-    elems = elems[0] === '<' && elems[elems.length - 1] === '>'
-      ? createElement(elems)
-      : querySelector(elems, context);
-  }
-
-  if (!elems) { return this }
-
-  if (elems.nodeType === 1 || elems === window) {
-    this[0] = elems;
-    this.length = 1;
-  } else {
-    for (
-      var len = (this.length = elems.length); // Sets current length
-      len--; // Ends loop when reaches 0
-      this[len] = elems[len] // Builds the array-like structure
-    ){  }
-  }
-};
-
-// Iterates through the elements with a 'callback(element, index)''
-Apheleia.prototype.forEach = function forEach (eachCb) {
-  // Iterates through the Apheleia object.
-  // If the callback returns false, the iteration stops.
-  for (
-    var i = 0, len = this.length;
-    i < len && eachCb.call(this, this[i], i++) !== false;
-
-  ){  }
-  return this
-};
-
-Apheleia.prototype.map = function map (mapCb) {
-  var result = [];
-  for (
-    var len = this.length;
-    len--;
-    result[len] = mapCb(this[len], len, this)
-  ){  }
-  return wrap(result, this)
-};
-
-Apheleia.prototype.filter = function filter (filterCb) {
-  return wrap(arrayPrototype.filter.call(this, filterCb), this)
-};
-
-// Creates a new Apheleia instance with the elements found.
-Apheleia.prototype.find = function find (selector) {
-  return new Apheleia(selector, this[0], { owner: this })
-};
-
-// Returns the collection in array format
-Apheleia.prototype.asArray = function asArray () {
-  return arrayPrototype.slice.call(this)
-};
-
-// Object Property manipulation methods
-Apheleia.prototype.get = function get (key) {
-  return this.map(function (elem) { return elem[key]; })
-};
-
-Apheleia.prototype.set = function set (objOrKey, nothingOrValue) {
-  return this.forEach(
-    isStr(objOrKey) || isInt(objOrKey)
-      ? function (elem) {
-        elem[objOrKey] = nothingOrValue;
-      }
-      : function (elem) {
-        for (var key in objOrKey) {
-          elem[key] = objOrKey[key];
-        }
-      }
-  )
-};
-
-// Gets and Sets the computed CSS value of a property.
-Apheleia.prototype.css = function css (key, val) {
-  if (isStr(key) && val == null) {
-    return this.map(function (elem) { return getComputedStyle(elem)[key]; })
-  }
-  return this.style.set(key, val)
-};
-
-// DOM Manipulation
-Apheleia.prototype.detach = function detach () {
-  return this.forEach(function (elem) {
-    elem.parentNode.removeChild(elem);
-  })
-};
-
-// Appends the passed html/aph
-Apheleia.prototype.append = function append (futureContent) {
-  return this.html(futureContent, function (parent, child) {
-    parent.appendChild(child);
-  })
-};
-
-Apheleia.prototype.appendTo = function appendTo (newParent) {
-  new Apheleia(newParent).append(this);
-  return this
-};
-
-// Prepends the passed html/aph
-Apheleia.prototype.prepend = function prepend (futureContent) {
-  return this.html(futureContent, function (parent, child) {
-    parent.insertBefore(child, parent.firstChild);
-  })
-};
-
-Apheleia.prototype.prependTo = function prependTo (newParent) {
-  new Apheleia(newParent).prepend(this);
-  return this
-};
-
-// Sets or gets the html
-Apheleia.prototype.html = function html (children, cb) {
-  // If there're no arguments
-  // Let's return the html of the first element
-  if (children == null) {
-    return this.map(function (elem) { return elem.innerHTML; })
-  }
-
-  // If the .html() is called without a callback, let's erase everything
-  // And append the nodes
-  if (!isFn(cb)) {
-    return this.forEach(function (parent) {
-      parent.innerHTML = '';
-    }).append(children)
-  }
-
-  // Manipulating arrays is easier
-  if (!isArrayLike(children)) {
-    children = [children];
-  }
-
-  // If we receive any collections (arrays, lists, aph),
-  // we must get its elements
-  var flatChildren = [];
-  for (var i = 0, len = children.length; i < len; i++) {
-    if (isArrayLike(children[i])) {
-      for (var j = 0, len2 = children[i].length; j < len2; j++) {
-        if (flatChildren.indexOf(children[i][j]) < 0) {
-          flatChildren.push(children[i][j]);
-        }
-      }
-    } else {
-      flatChildren.push(children[i]);
-    }
-  }
-
-  // If a callback is received as the second argument
-  // let's pass the parent and child nodes
-  // and let the callback do all the work
-  return this.forEach(function (parent) { return flatChildren.forEach(function (child) {
-      cb(parent, isStr(child) ? createElement(child) : child);
-    }); }
-  )
-};
-
-function aph (elems, context, metaObj) {
-  return new Apheleia(elems, context, metaObj)
-}
-
-aph.fn = Apheleia.prototype;
-aph.wrap = wrap;
-aph.querySelector = function (selector, context) {
-  querySelector(selector, aphParseContext(context));
-};
-
-// Extending default HTMLDivElement methods and properties
 var aDiv = createElement('<div>');
 function propLoop (propKey) {
   if (isFn(aDiv[propKey])) {
-    aph.fn[propKey] = wrapPrototypeMethod(propKey, aDiv);
+    Apheleia.fn[propKey] = wrapPrototypeMethod(propKey, aDiv);
   } else {
-    Object.defineProperty(aph.fn, propKey, {
+    Object.defineProperty(Apheleia.fn, propKey, {
       get: function get () {
         return this.get(propKey)
       },
@@ -402,12 +397,12 @@ function propLoop (propKey) {
 }
 
 for (var propKey in aDiv) {
-  if (!hasKey(aph.fn, propKey)) {
+  if (!hasKey(Apheleia.fn, propKey)) {
     propLoop(propKey);
   }
 }
 aDiv = null;
 
-return aph;
+return Apheleia;
 
 })));
