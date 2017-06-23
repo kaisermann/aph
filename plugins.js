@@ -1,4 +1,4 @@
-/* global aph, $$ */
+/* global $$ */
 
 $$.fn.log = function () {
   return this.forEach(item => console.log(item))
@@ -9,10 +9,14 @@ $$.fn.repeat = function (numberOfClones) {
   let cachedElements = this.asArray()
   for (let i = numberOfClones; i--;) {
     repeatedElements = repeatedElements.concat(
-      cachedElements.map(item => item.cloneNode())
+      cachedElements.map(item => item.cloneNode(true))
     )
   }
   return $$(repeatedElements, this.context, this)
+}
+
+$$.fn.clone = function () {
+  return this.repeat(1)
 }
 
 $$.fn.concat = function () {

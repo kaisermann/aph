@@ -307,10 +307,10 @@ function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
-var singleTagRegEx = /<(\w+)\/?>(?:$|<\/\1>)/i;
+var singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/i;
 var docFragment;
 function createElement (str, match) {
-  if ((match = singleTagRegEx.exec(str))) {
+  if (!/\r|\n/.test(str) && (match = singleTagRegEx.exec(str))) {
     return doc.createElement(match[1])
   }
 
