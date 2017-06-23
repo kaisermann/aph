@@ -2,13 +2,15 @@
 
 # Aph
 
-A very lightweight (4.31 kbs minified and **1.69 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (4.31 kbs minified and **1.67 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
 **And what is simpler than writing all your code _almost_ as if you're doing it with Vanilla JS, without having to learn a new API and begin to depend on it?**
 
 Yep, you read it right. Almost like Vanilla JS.
+
+### [Live samples](https://github.com/kaisermann/aph/wiki/Live-Samples)
 
 **Sample:**
 
@@ -269,6 +271,6 @@ Have some suggestions or critics? Talk to me!
 
 ## Credits and inspirations
 
-- ['Cash'](https://github.com/kenwheeler/cash/)
-- ['NodeList.js'](https://github.com/eorroe/NodeList.js)
-- ['jQuery'](https://github.com/jquery/jquery)
+- [Cash](https://github.com/kenwheeler/cash/)
+- [NodeList.js](https://github.com/eorroe/NodeList.js)
+- [jQuery](https://github.com/jquery/jquery)
