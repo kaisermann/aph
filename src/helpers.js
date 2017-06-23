@@ -1,4 +1,3 @@
-import Apheleia from './Apheleia.js'
 import { doc } from './shared.js'
 
 export function hasKey (what, key) {
@@ -66,6 +65,9 @@ export function aphParseContext (elemOrAphOrStr) {
 const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/i
 let docFragment
 export function createElement (str, match) {
+  // We check if there's any newline
+  // if yes, we assume it's a complex html element creation
+  // if not, we check if it's a simple tag
   if (!/\r|\n/.test(str) && (match = singleTagRegEx.exec(str))) {
     return doc.createElement(match[1])
   }
@@ -85,9 +87,9 @@ export function createElement (str, match) {
 const wrappedMethodsCache = {}
 
 // Searches for an apheleia collection on the ownership hierarchy
-function getAphOwner (what) {
-  while (what.constructor !== Apheleia) what = what.aph.owner
-  return what
+export function getAphOwner (what) {
+  while (what.aph === undefined) what = what.owner
+  return proxify(what)
 }
 
 // Auxiliary map function
@@ -98,6 +100,31 @@ function auxMap (overWhat, methodName, args) {
   return result[0] != null && result[result.length - 1] != null
     ? result
     : getAphOwner(overWhat)
+}
+
+export function proxify (what) {
+  return new Proxy(what, {
+    set (target, propKey, val) {
+      target.set(propKey, val)
+    },
+    get (target, propKey) {
+      if (hasKey(target, propKey)) {
+        return target[propKey]
+      }
+
+      if (target.length) {
+        if (isFn(target[0][propKey])) {
+          return wrapPrototypeMethod(propKey, target[0]).bind(target)
+        }
+
+        if (hasKey(target[0], propKey)) {
+          return target.map(i => i[propKey])
+        }
+      }
+
+      return undefined
+    },
+  })
 }
 
 export function wrapPrototypeMethod (methodName, sample) {

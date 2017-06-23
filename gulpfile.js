@@ -18,22 +18,10 @@ gulp.task('build', function () {
     .src('./src/aph.js')
     .pipe($.plumber())
     .pipe(
-      $.betterRollup(
-        {
-          plugins: [
-            rollUpBuble({
-              transforms: {
-                arrow: true,
-                dangerousForOf: true,
-              },
-            }),
-          ],
-        },
-        {
-          format: 'umd',
-          moduleName: '$$',
-        }
-      )
+      $.betterRollup({
+        format: 'umd',
+        moduleName: '$$',
+      })
     )
     .pipe($.rename(name + '.js'))
     .pipe($.size({ showFiles: true }))
@@ -44,7 +32,7 @@ gulp.task('minify', ['lint', 'build'], function () {
   return gulp
     .src(['./dist/' + name + '.js'])
     .pipe($.plumber())
-    .pipe($.uglify())
+    .pipe($.butternut())
     .pipe($.rename(name + '.min.js'))
     .pipe($.size({ showFiles: true }))
     .pipe(

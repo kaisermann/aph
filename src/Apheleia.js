@@ -6,21 +6,17 @@ import {
   createElement,
   aphParseContext,
   querySelector,
-  wrapPrototypeMethod,
-  hasKey,
+  getAphOwner,
+  proxify,
 } from './helpers.js'
 
 import { arrayPrototype } from './shared.js'
 
-function aphSetWrapper (objOrKey, nothingOrValue) {
-  Apheleia.prototype.set.call(this, objOrKey, nothingOrValue)
-  return this.aph.owner
-}
+let defaultCollectionMethods = {}
 
 export default class Apheleia {
-  constructor (elems, context, meta) {
-    if (!this) return new Apheleia(elems, context, meta)
-    this.aph = meta || {}
+  constructor (elems, context, meta = {}) {
+    this.aph = meta
     this.aph.context = context = aphParseContext(context)
     this.length = 0
 
@@ -43,6 +39,7 @@ export default class Apheleia {
         this[len] = elems[len] // Builds the array-like structure
       );
     }
+    return proxify(this)
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -73,7 +70,7 @@ export default class Apheleia {
 
   // Creates an Apheleia instance with the elements found.
   find (selector) {
-    return Apheleia(selector, this[0], { owner: this })
+    return new Apheleia(selector, this[0], { owner: this })
   }
 
   // Returns the collection in array format
@@ -87,16 +84,18 @@ export default class Apheleia {
   }
 
   set (objOrKey, nothingOrValue) {
-    return this.forEach(
-      isStr(objOrKey) || isInt(objOrKey)
-        ? elem => {
-          elem[objOrKey] = nothingOrValue
-        }
-        : elem => {
-          for (const key in objOrKey) {
-            elem[key] = objOrKey[key]
+    return getAphOwner(
+      this.forEach(
+        isStr(objOrKey) || isInt(objOrKey)
+          ? elem => {
+            elem[objOrKey] = nothingOrValue
           }
-        }
+          : elem => {
+            for (const key in objOrKey) {
+              elem[key] = objOrKey[key]
+            }
+          }
+      )
     )
   }
 
@@ -110,20 +109,18 @@ export default class Apheleia {
 
   // DOM Manipulation
   detach () {
-    return this.forEach(function (elem) {
-      elem.parentNode.removeChild(elem)
-    })
+    return this.forEach(elem => elem.parentNode.removeChild(elem))
   }
 
   // Appends the passed html/aph
   append (futureContent) {
-    return this.html(futureContent, (parent, child) => {
+    return this.html(futureContent, (parent, child) =>
       parent.appendChild(child)
-    })
+    )
   }
 
   appendTo (newParent) {
-    Apheleia(newParent).append(this)
+    new Apheleia(newParent).append(this)
     return this
   }
 
@@ -135,7 +132,7 @@ export default class Apheleia {
   }
 
   prependTo (newParent) {
-    Apheleia(newParent).prepend(this)
+    new Apheleia(newParent).prepend(this)
     return this
   }
 
@@ -184,6 +181,7 @@ export default class Apheleia {
       })
     })
   }
+
   static querySelector (selector, context) {
     return querySelector(selector, aphParseContext(context))
   }
@@ -202,9 +200,9 @@ export default class Apheleia {
           acc.push(item)
         }
       } else if (
-        ((item instanceof NodeList || item.constructor instanceof Array) &&
+        ((item instanceof NodeList || Array.isArray(item)) &&
           item[0].nodeType === 1) ||
-        item.constructor === Apheleia ||
+        item.aph !== undefined ||
         item instanceof HTMLCollection
       ) {
         // If we received a node list/collection
@@ -214,40 +212,14 @@ export default class Apheleia {
           }
         }
       } else {
-        what.map = Apheleia.prototype.map
-        what.filter = Apheleia.prototype.filter
-        what.forEach = Apheleia.prototype.forEach
-        what.get = Apheleia.prototype.get
-        what.set = aphSetWrapper
-        what.aph = { owner: owner }
-
-        // Returns a proxy which allows to access
-        // the items methods and properties
-        return new Proxy(what, {
-          set (target, propKey, val) {
-            target.set(propKey, val)
-          },
-          get (target, propKey) {
-            if (hasKey(target, propKey)) {
-              return target[propKey]
-            }
-
-            if (isFn(target[0][propKey])) {
-              return wrapPrototypeMethod(propKey, target[0]).bind(target)
-            }
-
-            if (hasKey(target[0], propKey)) {
-              return target.map(i => i[propKey])
-            }
-
-            return undefined
-          },
-        })
+        return proxify(Object.assign(what, defaultCollectionMethods, { owner }))
       }
     }
 
-    return Apheleia(acc, owner ? owner.aph.context : null, { owner: owner })
+    return new Apheleia(acc, owner.aph ? owner.aph.context : null, { owner })
   }
 }
 
-Apheleia.fn = Apheleia.prototype
+;['map', 'filter', 'forEach', 'get', 'set'].forEach(key => {
+  defaultCollectionMethods[key] = Apheleia.prototype[key]
+})
