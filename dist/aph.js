@@ -27,7 +27,7 @@ var Apheleia = function Apheleia (elems, context, meta) {
 
   if (!elems) { return this }
 
-  if (elems.nodeType === 1 || elems === window) {
+  if (elems.nodeType === 1 || elems.nodeType === 9 || elems === window) {
     this[0] = elems;
     this.length = 1;
   } else {
@@ -172,10 +172,11 @@ Apheleia.prototype.html = function html (children, cb) {
   // If a callback is received as the second argument
   // let's pass the parent and child nodes
   // and let the callback do all the work
-  return this.forEach(function (parent) { return flatChildren.forEach(function (child) {
+  return this.forEach(function (parent) {
+    flatChildren.forEach(function (child) {
       cb(parent, isStr(child) ? createElement(child) : child);
-    }); }
-  )
+    });
+  })
 };
 Apheleia.querySelector = function querySelector$1 (selector, context) {
   return querySelector(selector, aphParseContext(context))
@@ -306,7 +307,7 @@ function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
-var singleTagRegEx = /<(\w+)\/?>(?:<\/\1>)?/i;
+var singleTagRegEx = /<(\w+)\/?>(?:$|<\/\1>)/i;
 var docFragment;
 function createElement (str, match) {
   if ((match = singleTagRegEx.exec(str))) {

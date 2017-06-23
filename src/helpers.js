@@ -63,7 +63,7 @@ export function aphParseContext (elemOrAphOrStr) {
 }
 
 // Parses the elements passed to aph()
-const singleTagRegEx = /<(\w+)\/?>(?:<\/\1>)?/i
+const singleTagRegEx = /<(\w+)\/?>(?:$|<\/\1>)/i
 let docFragment
 export function createElement (str, match) {
   if ((match = singleTagRegEx.exec(str))) {

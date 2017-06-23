@@ -33,7 +33,7 @@ export default class Apheleia {
 
     if (!elems) return this
 
-    if (elems.nodeType === 1 || elems === window) {
+    if (elems.nodeType === 1 || elems.nodeType === 9 || elems === window) {
       this[0] = elems
       this.length = 1
     } else {
@@ -178,11 +178,11 @@ export default class Apheleia {
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
-    return this.forEach(parent =>
+    return this.forEach(parent => {
       flatChildren.forEach(child => {
         cb(parent, isStr(child) ? createElement(child) : child)
       })
-    )
+    })
   }
   static querySelector (selector, context) {
     return querySelector(selector, aphParseContext(context))
