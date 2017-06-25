@@ -1,18 +1,18 @@
 import {
   isStr,
   isFn,
-  isInt,
   isArrayLike,
   createElement,
   aphParseContext,
   querySelector,
   getAphOwner,
+  flattenArrayLike,
   proxify,
 } from './helpers.js'
 
 import { arrayPrototype } from './shared.js'
 
-let defaultCollectionMethods = {}
+const defaultCollectionMethods = ['map', 'filter', 'forEach', 'get', 'set']
 
 export default class Apheleia {
   constructor (elems, context, meta = {}) {
@@ -39,7 +39,7 @@ export default class Apheleia {
         this[len] = elems[len] // Builds the array-like structure
       );
     }
-    return proxify(this)
+    return (this.aph.proxy = proxify(this))
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -86,14 +86,14 @@ export default class Apheleia {
   set (objOrKey, nothingOrValue) {
     return getAphOwner(
       this.forEach(
-        isStr(objOrKey) || isInt(objOrKey)
+        objOrKey.constructor === Object
           ? elem => {
-            elem[objOrKey] = nothingOrValue
-          }
-          : elem => {
             for (const key in objOrKey) {
               elem[key] = objOrKey[key]
             }
+          }
+          : elem => {
+            elem[objOrKey] = nothingOrValue
           }
       )
     )
@@ -104,7 +104,8 @@ export default class Apheleia {
     if (isStr(key) && val == null) {
       return this.map(elem => getComputedStyle(elem)[key])
     }
-    return this.style.set(key, val)
+    // this.aph.proxy references the proxy in control of this Apheleia instance
+    return this.aph.proxy.style.set(key, val)
   }
 
   // DOM Manipulation
@@ -120,20 +121,18 @@ export default class Apheleia {
   }
 
   appendTo (newParent) {
-    new Apheleia(newParent).append(this)
-    return this
+    return new Apheleia(newParent).append(this) && this
   }
 
   // Prepends the passed html/aph
   prepend (futureContent) {
-    return this.html(futureContent, (parent, child) => {
+    return this.html(futureContent, (parent, child) =>
       parent.insertBefore(child, parent.firstChild)
-    })
+    )
   }
 
   prependTo (newParent) {
-    new Apheleia(newParent).prepend(this)
-    return this
+    return new Apheleia(newParent).prepend(this) && this
   }
 
   // Sets or gets the html
@@ -159,27 +158,16 @@ export default class Apheleia {
 
     // If we receive any collections (arrays, lists, aph),
     // we must get its elements
-    const flatChildren = []
-    for (let i = 0, len = children.length; i < len; i++) {
-      if (isArrayLike(children[i])) {
-        for (let j = 0, len2 = children[i].length; j < len2; j++) {
-          if (flatChildren.indexOf(children[i][j]) < 0) {
-            flatChildren.push(children[i][j])
-          }
-        }
-      } else {
-        flatChildren.push(children[i])
-      }
-    }
+    const flatChildren = flattenArrayLike(children)
 
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
-    return this.forEach(parent => {
-      flatChildren.forEach(child => {
+    return this.forEach(parent =>
+      flatChildren.forEach(child =>
         cb(parent, isStr(child) ? createElement(child) : child)
-      })
-    })
+      )
+    )
   }
 
   static querySelector (selector, context) {
@@ -187,39 +175,24 @@ export default class Apheleia {
   }
 
   static wrap (what, owner) {
-    let acc = []
+    // If it's a collection of nothing, return nothing
+    if (what[0] == null) return
 
-    for (let i = 0, len = what.length, item; i < len; i++) {
-      item = what[i]
-
-      if (item == null) continue
-
-      if (item.nodeType === 1) {
-        // If we received a single node
-        if (acc.indexOf(item) < 0) {
-          acc.push(item)
-        }
-      } else if (
-        ((item instanceof NodeList || Array.isArray(item)) &&
-          item[0].nodeType === 1) ||
-        item.aph !== undefined ||
-        item instanceof HTMLCollection
-      ) {
-        // If we received a node list/collection
-        for (let j = 0, len2 = item.length; j < len2; j++) {
-          if (acc.indexOf(item[j]) < 0) {
-            acc.push(item[j])
-          }
-        }
-      } else {
-        return proxify(Object.assign(what, defaultCollectionMethods, { owner }))
-      }
+    // If we receive an array like of nodes, let's flatten it
+    if (isArrayLike(what[0]) && what[0][0] && what[0][0].nodeType === 1) {
+      what = flattenArrayLike(what)
     }
 
-    return new Apheleia(acc, owner.aph ? owner.aph.context : null, { owner })
+    // Did we receive a list of nodes?
+    if (what[0] && what[0].nodeType === 1) {
+      return new Apheleia(what, owner.aph ? owner.aph.context : null, { owner })
+    }
+
+    // If not, proxify this sh*t
+    what.owner = owner
+    defaultCollectionMethods.forEach(key => {
+      what[key] = Apheleia.prototype[key]
+    })
+    return proxify(what)
   }
 }
-
-;['map', 'filter', 'forEach', 'get', 'set'].forEach(key => {
-  defaultCollectionMethods[key] = Apheleia.prototype[key]
-})

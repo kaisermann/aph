@@ -1,20 +1,21 @@
 import { doc } from './shared.js'
 
-export function hasKey (what, key) {
-  return typeof what[key] !== 'undefined'
-}
+export const hasKey = (what, key) => typeof what[key] !== 'undefined'
+export const isStr = maybeStr => typeof maybeStr === 'string'
+export const isFn = maybeFn => typeof maybeFn === 'function'
 
-// Check if what's passed is a string
-export function isStr (maybeStr) {
-  return typeof maybeStr === 'string'
-}
-
-export function isFn (maybeFn) {
-  return typeof maybeFn === 'function'
-}
-
-export function isInt (maybeInt) {
-  return typeof maybeInt === 'number' && Math.floor(maybeInt) === maybeInt
+export function flattenArrayLike (what) {
+  let flat = []
+  for (let i = 0, len = what.length; i < len; i++) {
+    if (isArrayLike(what[i])) {
+      flat = flat.concat(flattenArrayLike(what[i]))
+    } else {
+      if (flat.indexOf(what[i]) < 0) {
+        flat.push(what[i])
+      }
+    }
+  }
+  return flat
 }
 
 // Check if what's passed is to be considered a colletion
@@ -31,8 +32,8 @@ export function isArrayLike (maybeCollection) {
 const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/
 export function querySelector (selector, ctx) {
   let regTest
-  let matched
   if ((regTest = simpleSelectorPattern.exec(selector))) {
+    let matched
     if ((matched = regTest[3])) {
       return ctx.getElementsByClassName(matched)
     }
@@ -61,7 +62,6 @@ export function aphParseContext (elemOrAphOrStr) {
           : doc // Return the document if nothing else...
 }
 
-// Parses the elements passed to aph()
 const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/i
 let docFragment
 export function createElement (str, match) {
@@ -83,21 +83,18 @@ export function createElement (str, match) {
   return docFragment.body.childNodes[0]
 }
 
-// Wraps a object method making it work with collections natively and caches it
-const wrappedMethodsCache = {}
-
 // Searches for an apheleia collection on the ownership hierarchy
 export function getAphOwner (what) {
-  while (what.aph === undefined) what = what.owner
+  while (!what.aph) what = what.owner
   return proxify(what)
 }
 
 // Auxiliary map function
 function auxMap (overWhat, methodName, args) {
-  const result = overWhat.map(i => i[methodName].apply(i, args))
+  const result = overWhat.map(i => i[methodName](...args))
   // If first and last items are null/undefined,
   // we assume the method returned nothing
-  return result[0] != null && result[result.length - 1] != null
+  return result && result[0] != null && result[result.length - 1] != null
     ? result
     : getAphOwner(overWhat)
 }
@@ -108,7 +105,13 @@ export function proxify (what) {
       target.set(propKey, val)
     },
     get (target, propKey) {
+      // If key is '_target' let's return the target itself
+      if (propKey === '_target') return target
+
       if (hasKey(target, propKey)) {
+        if (isFn(target[propKey])) {
+          return target[propKey].bind(target)
+        }
         return target[propKey]
       }
 
@@ -127,6 +130,8 @@ export function proxify (what) {
   })
 }
 
+// Wraps a object method making it work with collections natively and caches it
+const wrappedMethodsCache = {}
 export function wrapPrototypeMethod (methodName, sample) {
   const curType = sample.constructor.name
 
@@ -141,8 +146,7 @@ export function wrapPrototypeMethod (methodName, sample) {
 
     wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
       'set' && methodName[methodName.length - 1] !== 's'
-      ? function () {
-        const args = arguments
+      ? function (...args) {
         // Received only one argument and it's a 'plain' object?
         if (args.length === 1 && args[0].constructor === Object) {
           return getAphOwner(
@@ -156,8 +160,8 @@ export function wrapPrototypeMethod (methodName, sample) {
         }
         return auxMap(this, methodName, args)
       }
-      : function () {
-        return auxMap(this, methodName, arguments)
+      : function (...args) {
+        return auxMap(this, methodName, args)
       }
   }
 

@@ -64,7 +64,7 @@ test("should return the parent Apheleia instance when 'meta.owner' is not null",
 ) {
   const aInstance = aph('*')
   const aNotherInstance = aInstance.find('div')
-  t.is(aNotherInstance.aph.owner, aInstance)
+  t.is(aNotherInstance.aph.owner, aInstance._target)
 })
 
 test('should search for a context element when string passed as parameter', function (
