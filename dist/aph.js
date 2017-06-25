@@ -40,17 +40,16 @@ const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/;
 function querySelector (selector, ctx) {
   let regTest;
   if ((regTest = simpleSelectorPattern.exec(selector))) {
-    let matched;
-    if ((matched = regTest[3])) {
-      return ctx.getElementsByClassName(matched)
+    if (regTest[3]) {
+      return ctx.getElementsByClassName(regTest[3])
     }
 
-    if ((matched = regTest[2])) {
-      return ctx.getElementsByTagName(matched)
+    if (regTest[2]) {
+      return ctx.getElementsByTagName(regTest[2])
     }
 
-    if ((matched = regTest[1])) {
-      return doc.getElementById(matched)
+    if (regTest[1]) {
+      return doc.getElementById(regTest[1])
     }
   }
   return ctx.querySelectorAll(selector)
@@ -69,25 +68,26 @@ function aphParseContext (elemOrAphOrStr) {
           : doc // Return the document if nothing else...
 }
 
-const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/i;
-let docFragment;
+const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/;
+const newlineRegEx = /\r|\n/;
+let auxDoc;
 function createElement (str, match) {
   // We check if there's any newline
   // if yes, we assume it's a complex html element creation
   // if not, we check if it's a simple tag
-  if (!/\r|\n/.test(str) && (match = singleTagRegEx.exec(str))) {
+  if (!newlineRegEx.test(str) && (match = singleTagRegEx.exec(str))) {
     return doc.createElement(match[1])
   }
 
-  if (!docFragment) {
-    docFragment = doc.implementation.createHTMLDocument();
-    const base = docFragment.createElement('base');
+  if (!auxDoc) {
+    auxDoc = doc.implementation.createHTMLDocument();
+    const base = auxDoc.createElement('base');
     base.href = document.location.href;
-    docFragment.head.appendChild(base);
+    auxDoc.head.appendChild(base);
   }
 
-  docFragment.body.innerHTML = str;
-  return docFragment.body.childNodes[0]
+  auxDoc.body.innerHTML = str;
+  return auxDoc.body.childNodes[0]
 }
 
 // Searches for an apheleia collection on the ownership hierarchy
@@ -112,14 +112,10 @@ function proxify (what) {
       target.set(propKey, val);
     },
     get (target, propKey) {
-      // If key is '_target' let's return the target itself
-      if (propKey === '_target') return target
-
       if (hasKey(target, propKey)) {
-        if (isFn(target[propKey])) {
-          return target[propKey].bind(target)
-        }
-        return target[propKey]
+        return isFn(target[propKey])
+          ? target[propKey].bind(target)
+          : target[propKey]
       }
 
       if (target.length) {
@@ -130,6 +126,11 @@ function proxify (what) {
         if (hasKey(target[0], propKey)) {
           return target.map(i => i[propKey])
         }
+      }
+
+      // If key is '_target' let's return the target itself
+      if (propKey === '_target') {
+        return target
       }
 
       return undefined
@@ -174,8 +175,6 @@ function wrapPrototypeMethod (methodName, sample) {
 
   return wrappedMethodsCache[curType][methodName]
 }
-
-const defaultCollectionMethods = ['map', 'filter', 'forEach', 'get', 'set'];
 
 class Apheleia {
   constructor (elems, context, meta = {}) {
@@ -353,9 +352,11 @@ class Apheleia {
 
     // If not, proxify this sh*t
     what.owner = owner;
-    defaultCollectionMethods.forEach(key => {
-      what[key] = Apheleia.prototype[key];
-    });
+    what.map = Apheleia.prototype.map;
+    what.filter = Apheleia.prototype.filter;
+    what.forEach = Apheleia.prototype.forEach;
+    what.get = Apheleia.prototype.get;
+    what.set = Apheleia.prototype.set;
     return proxify(what)
   }
 }

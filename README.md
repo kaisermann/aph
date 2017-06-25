@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (3.57 kbs minified and **1.52 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (3.6 kbs minified and **1.53 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -60,27 +60,24 @@ Yep, you read it right. Almost like Vanilla JS.
 
 ### How does it work
 
-`aph` initially extends all getters/setters/methods from `HTMLDivElement`. For each call to one of those methods/properties, `aph` creates a Proxy which allows you to access them as if you were dealing with the objects itself.
+`aph` creates a Proxy which allows you to access properties and methods of nodes inside a node collection as if you were dealing with the nodes itself.
 
 **Example**:
 ```js
 1) $$('div')
-Creates an Apheleia Collection around all divs
+Creates an Apheleia Collection around all divs and returns a proxy.
 
 2) $$('div').classList
-Returns the classList of all divs
+Returns a proxy of the classList of all divs
 [DOMTokenList(0), DOMTokenList(1), DOMTokenList(1)]
 
 3) aph identifies the type of the first entry (DOMTokenList) and creates
 a proxy which passes all functions to the DOMTokenList.prototype.
-The array will now be considered an Apheleia Proxy.
 
 4) $$('div').classList.add('test-class','test-class-2')
 
 5) *PROFIT*
 ```
-
-**Obs: `Proxy` cannot be completely pollyfilled.**
 
 ---
 
@@ -120,11 +117,9 @@ $$('div').style.set({
 })
 ```
 
-Properties not available in `HTMLDivElement`, such as `href` on `<a>` elements, can be returned by using the `.get(propertyName)` method.
-
 ### But... what about performance?
 
-By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing... oh boy).
+By using Proxies, the performance hit is not that big (comparing with the old way `aph` did its thing... oh boy. Seriously, don't try to polyfill Proxies).
 
 ##### Let's see some benchmarks
 
@@ -265,11 +260,18 @@ Have some suggestions or critics? Talk to me!
 
 ### [Go see the documentation!](https://github.com/kaisermann/aph/wiki)
 
+
+#### Why the `dist` code is not transpiled?
+
+We're already using Proxies, which cannot be polyfilled, so we're already stuck with ES6. Might as well write the rest of the code with ES6 too ;)
+
+
 ## Browsers support <sub><sup><sub><sub>made by <a href="https://godban.github.io">godban</a></sub></sub></sup></sub>
 
 | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/edge.png" alt="IE / Edge" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>IE / Edge | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/firefox.png" alt="Firefox" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/chrome.png" alt="Chrome" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/safari.png" alt="Safari" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Safari | [<img src="https://raw.githubusercontent.com/godban/browsers-support-badges/master/src/images/opera.png" alt="Opera" width="16px" height="16px" />](http://godban.github.io/browsers-support-badges/)</br>Opera |
 | --------- | --------- | --------- | --------- | --------- |
 | 12+ | 18+ | 49+ | 10+ | 36+
+
 
 ## Credits and inspirations
 

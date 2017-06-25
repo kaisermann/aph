@@ -12,8 +12,6 @@ import {
 
 import { arrayPrototype } from './shared.js'
 
-const defaultCollectionMethods = ['map', 'filter', 'forEach', 'get', 'set']
-
 export default class Apheleia {
   constructor (elems, context, meta = {}) {
     this.aph = meta
@@ -190,9 +188,11 @@ export default class Apheleia {
 
     // If not, proxify this sh*t
     what.owner = owner
-    defaultCollectionMethods.forEach(key => {
-      what[key] = Apheleia.prototype[key]
-    })
+    what.map = Apheleia.prototype.map
+    what.filter = Apheleia.prototype.filter
+    what.forEach = Apheleia.prototype.forEach
+    what.get = Apheleia.prototype.get
+    what.set = Apheleia.prototype.set
     return proxify(what)
   }
 }
