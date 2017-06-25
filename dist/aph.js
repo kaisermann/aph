@@ -7,21 +7,22 @@
 const arrayPrototype = Array.prototype;
 const doc = document;
 
-function hasKey (what, key) {
-  return typeof what[key] !== 'undefined'
-}
+const hasKey = (what, key) => typeof what[key] !== 'undefined';
+const isStr = maybeStr => typeof maybeStr === 'string';
+const isFn = maybeFn => typeof maybeFn === 'function';
 
-// Check if what's passed is a string
-function isStr (maybeStr) {
-  return typeof maybeStr === 'string'
-}
-
-function isFn (maybeFn) {
-  return typeof maybeFn === 'function'
-}
-
-function isInt (maybeInt) {
-  return typeof maybeInt === 'number' && Math.floor(maybeInt) === maybeInt
+function flattenArrayLike (what) {
+  let flat = [];
+  for (let i = 0, len = what.length; i < len; i++) {
+    if (isArrayLike(what[i])) {
+      flat = flat.concat(flattenArrayLike(what[i]));
+    } else {
+      if (flat.indexOf(what[i]) < 0) {
+        flat.push(what[i]);
+      }
+    }
+  }
+  return flat
 }
 
 // Check if what's passed is to be considered a colletion
@@ -38,8 +39,8 @@ function isArrayLike (maybeCollection) {
 const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/;
 function querySelector (selector, ctx) {
   let regTest;
-  let matched;
   if ((regTest = simpleSelectorPattern.exec(selector))) {
+    let matched;
     if ((matched = regTest[3])) {
       return ctx.getElementsByClassName(matched)
     }
@@ -68,7 +69,6 @@ function aphParseContext (elemOrAphOrStr) {
           : doc // Return the document if nothing else...
 }
 
-// Parses the elements passed to aph()
 const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/i;
 let docFragment;
 function createElement (str, match) {
@@ -90,21 +90,18 @@ function createElement (str, match) {
   return docFragment.body.childNodes[0]
 }
 
-// Wraps a object method making it work with collections natively and caches it
-const wrappedMethodsCache = {};
-
 // Searches for an apheleia collection on the ownership hierarchy
 function getAphOwner (what) {
-  while (what.aph === undefined) what = what.owner;
+  while (!what.aph) what = what.owner;
   return proxify(what)
 }
 
 // Auxiliary map function
 function auxMap (overWhat, methodName, args) {
-  const result = overWhat.map(i => i[methodName].apply(i, args));
+  const result = overWhat.map(i => i[methodName](...args));
   // If first and last items are null/undefined,
   // we assume the method returned nothing
-  return result[0] != null && result[result.length - 1] != null
+  return result && result[0] != null && result[result.length - 1] != null
     ? result
     : getAphOwner(overWhat)
 }
@@ -115,7 +112,13 @@ function proxify (what) {
       target.set(propKey, val);
     },
     get (target, propKey) {
+      // If key is '_target' let's return the target itself
+      if (propKey === '_target') return target
+
       if (hasKey(target, propKey)) {
+        if (isFn(target[propKey])) {
+          return target[propKey].bind(target)
+        }
         return target[propKey]
       }
 
@@ -134,6 +137,8 @@ function proxify (what) {
   })
 }
 
+// Wraps a object method making it work with collections natively and caches it
+const wrappedMethodsCache = {};
 function wrapPrototypeMethod (methodName, sample) {
   const curType = sample.constructor.name;
 
@@ -148,8 +153,7 @@ function wrapPrototypeMethod (methodName, sample) {
 
     wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
       'set' && methodName[methodName.length - 1] !== 's'
-      ? function () {
-        const args = arguments;
+      ? function (...args) {
         // Received only one argument and it's a 'plain' object?
         if (args.length === 1 && args[0].constructor === Object) {
           return getAphOwner(
@@ -163,15 +167,15 @@ function wrapPrototypeMethod (methodName, sample) {
         }
         return auxMap(this, methodName, args)
       }
-      : function () {
-        return auxMap(this, methodName, arguments)
+      : function (...args) {
+        return auxMap(this, methodName, args)
       };
   }
 
   return wrappedMethodsCache[curType][methodName]
 }
 
-let defaultCollectionMethods = {};
+const defaultCollectionMethods = ['map', 'filter', 'forEach', 'get', 'set'];
 
 class Apheleia {
   constructor (elems, context, meta = {}) {
@@ -198,7 +202,7 @@ class Apheleia {
         this[len] = elems[len] // Builds the array-like structure
       );
     }
-    return proxify(this)
+    return (this.aph.proxy = proxify(this))
   }
 
   // Iterates through the elements with a 'callback(element, index)''
@@ -245,14 +249,14 @@ class Apheleia {
   set (objOrKey, nothingOrValue) {
     return getAphOwner(
       this.forEach(
-        isStr(objOrKey) || isInt(objOrKey)
+        objOrKey.constructor === Object
           ? elem => {
-            elem[objOrKey] = nothingOrValue;
-          }
-          : elem => {
             for (const key in objOrKey) {
               elem[key] = objOrKey[key];
             }
+          }
+          : elem => {
+            elem[objOrKey] = nothingOrValue;
           }
       )
     )
@@ -263,7 +267,8 @@ class Apheleia {
     if (isStr(key) && val == null) {
       return this.map(elem => getComputedStyle(elem)[key])
     }
-    return this.style.set(key, val)
+    // this.aph.proxy references the proxy in control of this Apheleia instance
+    return this.aph.proxy.style.set(key, val)
   }
 
   // DOM Manipulation
@@ -279,20 +284,18 @@ class Apheleia {
   }
 
   appendTo (newParent) {
-    new Apheleia(newParent).append(this);
-    return this
+    return new Apheleia(newParent).append(this) && this
   }
 
   // Prepends the passed html/aph
   prepend (futureContent) {
-    return this.html(futureContent, (parent, child) => {
-      parent.insertBefore(child, parent.firstChild);
-    })
+    return this.html(futureContent, (parent, child) =>
+      parent.insertBefore(child, parent.firstChild)
+    )
   }
 
   prependTo (newParent) {
-    new Apheleia(newParent).prepend(this);
-    return this
+    return new Apheleia(newParent).prepend(this) && this
   }
 
   // Sets or gets the html
@@ -318,27 +321,16 @@ class Apheleia {
 
     // If we receive any collections (arrays, lists, aph),
     // we must get its elements
-    const flatChildren = [];
-    for (let i = 0, len = children.length; i < len; i++) {
-      if (isArrayLike(children[i])) {
-        for (let j = 0, len2 = children[i].length; j < len2; j++) {
-          if (flatChildren.indexOf(children[i][j]) < 0) {
-            flatChildren.push(children[i][j]);
-          }
-        }
-      } else {
-        flatChildren.push(children[i]);
-      }
-    }
+    const flatChildren = flattenArrayLike(children);
 
     // If a callback is received as the second argument
     // let's pass the parent and child nodes
     // and let the callback do all the work
-    return this.forEach(parent => {
-      flatChildren.forEach(child => {
-        cb(parent, isStr(child) ? createElement(child) : child);
-      });
-    })
+    return this.forEach(parent =>
+      flatChildren.forEach(child =>
+        cb(parent, isStr(child) ? createElement(child) : child)
+      )
+    )
   }
 
   static querySelector (selector, context) {
@@ -346,48 +338,35 @@ class Apheleia {
   }
 
   static wrap (what, owner) {
-    let acc = [];
+    // If it's a collection of nothing, return nothing
+    if (what[0] == null) return
 
-    for (let i = 0, len = what.length, item; i < len; i++) {
-      item = what[i];
-
-      if (item == null) continue
-
-      if (item.nodeType === 1) {
-        // If we received a single node
-        if (acc.indexOf(item) < 0) {
-          acc.push(item);
-        }
-      } else if (
-        ((item instanceof NodeList || Array.isArray(item)) &&
-          item[0].nodeType === 1) ||
-        item.aph !== undefined ||
-        item instanceof HTMLCollection
-      ) {
-        // If we received a node list/collection
-        for (let j = 0, len2 = item.length; j < len2; j++) {
-          if (acc.indexOf(item[j]) < 0) {
-            acc.push(item[j]);
-          }
-        }
-      } else {
-        return proxify(Object.assign(what, defaultCollectionMethods, { owner }))
-      }
+    // If we receive an array like of nodes, let's flatten it
+    if (isArrayLike(what[0]) && what[0][0] && what[0][0].nodeType === 1) {
+      what = flattenArrayLike(what);
     }
 
-    return new Apheleia(acc, owner.aph ? owner.aph.context : null, { owner })
+    // Did we receive a list of nodes?
+    if (what[0] && what[0].nodeType === 1) {
+      return new Apheleia(what, owner.aph ? owner.aph.context : null, { owner })
+    }
+
+    // If not, proxify this sh*t
+    what.owner = owner;
+    defaultCollectionMethods.forEach(key => {
+      what[key] = Apheleia.prototype[key];
+    });
+    return proxify(what)
   }
 }
-
-['map', 'filter', 'forEach', 'get', 'set'].forEach(key => {
-  defaultCollectionMethods[key] = Apheleia.prototype[key];
-});
 
 function aph (elems, context, meta) {
   return new Apheleia(elems, context, meta)
 }
 
 aph.fn = Apheleia.prototype;
+aph.wrap = Apheleia.wrap;
+aph.querySelector = Apheleia.querySelector;
 
 return aph;
 

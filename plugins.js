@@ -12,7 +12,7 @@ $$.fn.repeat = function (numberOfClones) {
       cachedElements.map(item => item.cloneNode(true))
     )
   }
-  return $$(repeatedElements, this.context, this)
+  return $$(repeatedElements, this.aph.context, { owner: this })
 }
 
 $$.fn.clone = function () {
