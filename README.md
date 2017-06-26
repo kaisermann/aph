@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (3.6 kbs minified and **1.53 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (3.69 kbs minified and **1.58 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -81,13 +81,18 @@ a proxy which passes all functions to the DOMTokenList.prototype.
 
 ---
 
-Any extended method with a name beginning with `set` and not ending with a `s`, such as `.setAttribute`/`.setProperty`, can be used by passing an object of key/value pairs.
+Any extended method with a name beginning with `set`/`add`/`remove` and not ending with a `s`, such as `.setAttribute`/`.setProperty`/`.addEventListener`/`.removeEventListener`, can be used by passing an object of key/value pairs.
 
 ```js
 $$('div').setAttribute('oneAttribute','atAtime')
 $$('div').setAttribute({
   multiple: 'attributes',
   at: 'aTime'
+})
+
+$$(window).addEventListener({
+  click() { ... },
+  mousemove() { ... },
 })
 ```
 

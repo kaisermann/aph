@@ -33,16 +33,16 @@ const simpleSelectorPattern = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/
 export function querySelector (selector, ctx) {
   let regTest
   if ((regTest = simpleSelectorPattern.exec(selector))) {
-    if (regTest[3]) {
-      return ctx.getElementsByClassName(regTest[3])
+    if (regTest[1]) {
+      return doc.getElementById(regTest[1])
     }
 
     if (regTest[2]) {
       return ctx.getElementsByTagName(regTest[2])
     }
 
-    if (regTest[1]) {
-      return doc.getElementById(regTest[1])
+    if (regTest[3]) {
+      return ctx.getElementsByClassName(regTest[3])
     }
   }
   return ctx.querySelectorAll(selector)
@@ -61,14 +61,10 @@ export function aphParseContext (elemOrAphOrStr) {
           : doc // Return the document if nothing else...
 }
 
-const singleTagRegEx = /^<(\w+)\/?>(?:$|<\/\1>)/
-const newlineRegEx = /\r|\n/
+const singleTagRegEx = /^<(\w+)\/?>[^\n\r\S]*(?:$|<\/\1>)/
 let auxDoc
 export function createElement (str, match) {
-  // We check if there's any newline
-  // if yes, we assume it's a complex html element creation
-  // if not, we check if it's a simple tag
-  if (!newlineRegEx.test(str) && (match = singleTagRegEx.exec(str))) {
+  if ((match = singleTagRegEx.exec(str))) {
     return doc.createElement(match[1])
   }
 
@@ -84,9 +80,9 @@ export function createElement (str, match) {
 }
 
 // Searches for an apheleia collection on the ownership hierarchy
-export function getAphOwner (what) {
+export function getAphProxy (what) {
   while (!what.aph) what = what.owner
-  return proxify(what)
+  return what.aph.proxy
 }
 
 // Auxiliary map function
@@ -96,7 +92,7 @@ function auxMap (overWhat, methodName, args) {
   // we assume the method returned nothing
   return result && result[0] != null && result[result.length - 1] != null
     ? result
-    : getAphOwner(overWhat)
+    : getAphProxy(overWhat)
 }
 
 export function proxify (what) {
@@ -105,10 +101,12 @@ export function proxify (what) {
       target.set(propKey, val)
     },
     get (target, propKey) {
+      if (isFn(target[propKey])) {
+        return target[propKey].bind(target)
+      }
+
       if (hasKey(target, propKey)) {
-        return isFn(target[propKey])
-          ? target[propKey].bind(target)
-          : target[propKey]
+        return target[propKey]
       }
 
       if (target.length) {
@@ -145,18 +143,20 @@ export function wrapPrototypeMethod (methodName, sample) {
     // If we're dealing with a set method,
     // should allow to pass a object as parameter
 
-    wrappedMethodsCache[curType][methodName] = methodName.substr(0, 3) ===
-      'set' && methodName[methodName.length - 1] !== 's'
+    const methodPrefix = methodName.substr(0, 3)
+    wrappedMethodsCache[curType][methodName] = ['set', 'add', 'remove'].some(
+      pref => methodPrefix === pref && methodName.length > pref.length
+    ) && methodName[methodName.length - 1] !== 's'
       ? function (...args) {
-        // Received only one argument and it's a 'plain' object?
-        if (args.length === 1 && args[0].constructor === Object) {
-          return getAphOwner(
+        // Received a 'plain' object as the first parameter?
+        if (args[0].constructor === Object) {
+          const [argObj, ...rest] = args
+          return getAphProxy(
             this.forEach(item => {
-              for (const objKey in args[0]) {
-                item[methodName](objKey, args[0][objKey])
+              for (const objKey in argObj) {
+                item[methodName](objKey, argObj[objKey], ...rest)
               }
             })
-            // this.forEach returns 'this'
           )
         }
         return auxMap(this, methodName, args)

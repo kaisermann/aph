@@ -5,7 +5,7 @@ import {
   createElement,
   aphParseContext,
   querySelector,
-  getAphOwner,
+  getAphProxy,
   flattenArrayLike,
   proxify,
 } from './helpers.js'
@@ -46,10 +46,12 @@ export default class Apheleia {
     // If the callback returns false, the iteration stops.
     for (
       let i = 0, len = this.length;
-      i < len && eachCb.call(this, this[i], i++) !== false;
+      len-- && eachCb.call(this, this[i], i++) !== false;
 
     );
-    return this
+
+    // If we have an owner, let's get the apheleia owner
+    return getAphProxy(this)
   }
 
   map (mapCb) {
@@ -82,7 +84,7 @@ export default class Apheleia {
   }
 
   set (objOrKey, nothingOrValue) {
-    return getAphOwner(
+    return getAphProxy(
       this.forEach(
         objOrKey.constructor === Object
           ? elem => {
@@ -103,7 +105,7 @@ export default class Apheleia {
       return this.map(elem => getComputedStyle(elem)[key])
     }
     // this.aph.proxy references the proxy in control of this Apheleia instance
-    return this.aph.proxy.style.set(key, val)
+    return this.aph.proxy.style.setProperty(key, val)
   }
 
   // DOM Manipulation
