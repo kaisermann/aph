@@ -97,7 +97,9 @@ function auxMap (overWhat, methodName, args) {
   const result = overWhat.map(i => i[methodName](...args));
   // If first and last items are null/undefined,
   // we assume the method returned nothing
-  return result && result[0] != null && result[result.length - 1] != null
+  return typeof result !== 'undefined' &&
+    (typeof result !== 'object' ||
+      (result[0] != null && result[result.length - 1] != null))
     ? result
     : getAphProxy(overWhat)
 }
@@ -116,14 +118,12 @@ function proxify (what) {
         return target[propKey]
       }
 
-      if (target.length) {
-        if (isFn(target[0][propKey])) {
-          return wrapPrototypeMethod(propKey, target[0]).bind(target)
-        }
+      if (isFn(target[0][propKey])) {
+        return wrapPrototypeMethod(propKey, target[0]).bind(target)
+      }
 
-        if (hasKey(target[0], propKey)) {
-          return target.map(i => i[propKey])
-        }
+      if (hasKey(target[0], propKey)) {
+        return target.get(propKey)
       }
 
       // If key is '_target' let's return the target itself
@@ -352,13 +352,13 @@ class Apheleia {
       return new Apheleia(what, owner.aph ? owner.aph.context : null, { owner })
     }
 
-    // If not, proxify this sh*t
     what.owner = owner;
     what.map = Apheleia.prototype.map;
     what.filter = Apheleia.prototype.filter;
     what.forEach = Apheleia.prototype.forEach;
     what.get = Apheleia.prototype.get;
     what.set = Apheleia.prototype.set;
+    // If not, proxify this sh*t
     return proxify(what)
   }
 }

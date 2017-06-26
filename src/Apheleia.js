@@ -188,13 +188,13 @@ export default class Apheleia {
       return new Apheleia(what, owner.aph ? owner.aph.context : null, { owner })
     }
 
-    // If not, proxify this sh*t
     what.owner = owner
     what.map = Apheleia.prototype.map
     what.filter = Apheleia.prototype.filter
     what.forEach = Apheleia.prototype.forEach
     what.get = Apheleia.prototype.get
     what.set = Apheleia.prototype.set
+    // If not, proxify this sh*t
     return proxify(what)
   }
 }
