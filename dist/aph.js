@@ -189,17 +189,17 @@ class Apheleia {
         : querySelector(elems, context);
     }
 
-    if (!elems) return this
-
-    if (elems.nodeType === 1 || elems.nodeType === 9 || elems === window) {
-      this[0] = elems;
-      this.length = 1;
-    } else {
-      for (
-        let len = (this.length = elems.length); // Sets current length
-        len--; // Ends loop when reaches 0
-        this[len] = elems[len] // Builds the array-like structure
-      );
+    if (elems) {
+      if (elems.nodeType === 1 || elems.nodeType === 9 || elems === window) {
+        this[0] = elems;
+        this.length = 1;
+      } else {
+        for (
+          let len = (this.length = elems.length); // Sets current length
+          len--; // Ends loop when reaches 0
+          this[len] = elems[len] // Builds the array-like structure
+        );
+      }
     }
     return (this.aph.proxy = proxify(this))
   }
@@ -269,7 +269,7 @@ class Apheleia {
       return this.map(elem => getComputedStyle(elem)[key])
     }
     // this.aph.proxy references the proxy in control of this Apheleia instance
-    return this.aph.proxy.style.setProperty(key, val)
+    this.aph.proxy.style.set(key, val);
   }
 
   // DOM Manipulation

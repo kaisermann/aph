@@ -24,7 +24,7 @@
 				_items: [],
 				$add(what) {
 					this._items.push(what)
-					$$(`<li>${what}</li>`).appendTo(this)
+					$$(`<li data-key="${this._items.length - 1}">${what}</li>`).appendTo(this)
 				},
 				$updateLastItem(text) {
 					const lastIndex = this._items.length - 1
