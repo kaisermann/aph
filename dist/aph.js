@@ -10,6 +10,9 @@ const doc = document;
 const hasKey = (what, key) => typeof what[key] !== 'undefined';
 const isStr = maybeStr => typeof maybeStr === 'string';
 const isFn = maybeFn => typeof maybeFn === 'function';
+const isArrayLike = maybeCollection =>
+  typeof maybeCollection === 'object' &&
+  typeof maybeCollection.length === 'number';
 
 function flattenArrayLike (what) {
   let flat = [];
@@ -23,16 +26,6 @@ function flattenArrayLike (what) {
     }
   }
   return flat
-}
-
-// Check if what's passed is to be considered a colletion
-function isArrayLike (maybeCollection) {
-  return (
-    maybeCollection &&
-    !isStr(maybeCollection) &&
-    !isFn(maybeCollection) &&
-    hasKey(maybeCollection, 'length')
-  )
 }
 
 // Queries a selector

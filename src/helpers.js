@@ -3,6 +3,9 @@ import { doc } from './shared.js'
 export const hasKey = (what, key) => typeof what[key] !== 'undefined'
 export const isStr = maybeStr => typeof maybeStr === 'string'
 export const isFn = maybeFn => typeof maybeFn === 'function'
+export const isArrayLike = maybeCollection =>
+  typeof maybeCollection === 'object' &&
+  typeof maybeCollection.length === 'number'
 
 export function flattenArrayLike (what) {
   let flat = []
@@ -16,16 +19,6 @@ export function flattenArrayLike (what) {
     }
   }
   return flat
-}
-
-// Check if what's passed is to be considered a colletion
-export function isArrayLike (maybeCollection) {
-  return (
-    maybeCollection &&
-    !isStr(maybeCollection) &&
-    !isFn(maybeCollection) &&
-    hasKey(maybeCollection, 'length')
-  )
 }
 
 // Queries a selector
