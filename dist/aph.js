@@ -131,6 +131,7 @@ function proxify (what) {
 
 // Wraps a object method making it work with collections natively and caches it
 const wrappedMethodsCache = {};
+const reservedPrefixes = ['set', 'add', 'remove'];
 function wrapPrototypeMethod (methodName, sample) {
   const curType = sample.constructor.name;
 
@@ -143,27 +144,27 @@ function wrapPrototypeMethod (methodName, sample) {
     // If we're dealing with a set method,
     // should allow to pass a object as parameter
 
-    const methodPrefix = methodName.substr(0, 3);
-    wrappedMethodsCache[curType][methodName] = ['set', 'add', 'remove'].some(
-      pref => methodPrefix === pref && methodName.length > pref.length
-    ) && methodName[methodName.length - 1] !== 's'
-      ? function (...args) {
-        // Received a 'plain' object as the first parameter?
-        if (args[0].constructor === Object) {
-          const [argObj, ...rest] = args;
-          return getAphProxy(
-            this.forEach(item => {
-              for (const objKey in argObj) {
-                item[methodName](objKey, argObj[objKey], ...rest);
-              }
-            })
-          )
+    wrappedMethodsCache[curType][methodName] =
+      reservedPrefixes.some(
+        pref => !methodName.indexOf(pref) && methodName.length > pref.length
+      ) && methodName[methodName.length - 1] !== 's'
+        ? function (...args) {
+          // Received a 'plain' object as the first parameter?
+          if (args[0].constructor === Object) {
+            const [argObj, ...rest] = args;
+            return getAphProxy(
+              this.forEach(item => {
+                for (const objKey in argObj) {
+                  item[methodName](objKey, argObj[objKey], ...rest);
+                }
+              })
+            )
+          }
+          return auxMap(this, methodName, args)
         }
-        return auxMap(this, methodName, args)
-      }
-      : function (...args) {
-        return auxMap(this, methodName, args)
-      };
+        : function (...args) {
+          return auxMap(this, methodName, args)
+        };
   }
 
   return wrappedMethodsCache[curType][methodName]

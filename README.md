@@ -2,7 +2,7 @@
 
 # Aph
 
-A very lightweight (3.69 kbs minified and **1.58 kbs** gzipped), easy-to-use DOM manipulation library.
+A very lightweight (3.66 kbs minified and **1.55 kbs** gzipped), easy-to-use DOM manipulation library.
 
 **'a', 'p', 'h'** are the first letters of **Apheleia**, the greek mythology spirit and personification of ease, simplicity and primitivity in the good sense.
 
@@ -269,7 +269,7 @@ Have some suggestions or critics? Talk to me!
 ### [Go see the documentation!](https://github.com/kaisermann/aph/wiki)
 
 
-#### Why the `dist` code is not transpiled?
+#### Why the code is not transpiled?
 
 We're already using Proxies, which cannot be polyfilled, so we're already stuck with ES6. Might as well write the rest of the code with ES6 too ;)
 
