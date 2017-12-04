@@ -20,9 +20,10 @@ export default class Apheleia {
 
     if (isStr(elems)) {
       // If creation string, create the element
-      elems = elems[0] === '<' && elems[elems.length - 1] === '>'
-        ? createElement(elems)
-        : querySelector(elems, context)
+      elems =
+        elems[0] === '<' && elems[elems.length - 1] === '>'
+          ? createElement(elems)
+          : querySelector(elems, context)
     }
 
     if (elems) {
@@ -87,13 +88,13 @@ export default class Apheleia {
     return getAphProxy(
       this.forEach(
         objOrKey.constructor === Object
-          ? elem => {
+          ? item => {
             for (const key in objOrKey) {
-              elem[key] = objOrKey[key]
+              item[key] = objOrKey[key]
             }
           }
-          : elem => {
-            elem[objOrKey] = nothingOrValue
+          : item => {
+            item[objOrKey] = nothingOrValue
           }
       )
     )
@@ -102,7 +103,7 @@ export default class Apheleia {
   // Gets and Sets the computed CSS value of a property.
   css (key, val) {
     if (isStr(key) && val == null) {
-      return this.map(elem => getComputedStyle(elem)[key])
+      return this.map(item => getComputedStyle(item)[key])
     }
     // this.aph.proxy references the proxy in control of this Apheleia instance
     this.aph.proxy.style.set(key, val)
@@ -110,7 +111,7 @@ export default class Apheleia {
 
   // DOM Manipulation
   detach () {
-    return this.forEach(elem => elem.parentNode.removeChild(elem))
+    return this.forEach(item => item.parentNode.removeChild(item))
   }
 
   // Appends the passed html/aph
@@ -140,7 +141,7 @@ export default class Apheleia {
     // If there're no arguments
     // Let's return the html of the first element
     if (children == null) {
-      return this.map(elem => elem.innerHTML)
+      return this.map(item => item.innerHTML)
     }
 
     // If the .html() is called without a callback, let's erase everything
